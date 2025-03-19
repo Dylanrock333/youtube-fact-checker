@@ -1,0 +1,94 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env
+.venv
+env.bak/
+venv.bak/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.project
+.pydevproject
+.settings/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Testing
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.pytest_cache/
+coverage.xml
+*.cover
+
+# Logs
+*.log
+logs/
+
+# Local data files
+*.db
+*.sqlite3
+*.json.bak
+*.csv.bak
+
+# API keys and secrets
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Generated files
+output/
+results/
+temp/
+
+# Media files (if not part of the repository)
+# Uncomment if needed
+# *.mp4
+# *.mp3
+# *.wav
+# *.jpg
+# *.jpeg
+# *.png
+# *.gif
+
+# Large data files
+# Uncomment if needed
+# *.csv
+# *.xlsx
+# *.xls
+# *.parquet
+# *.h5
