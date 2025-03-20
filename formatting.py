@@ -1,13 +1,21 @@
 import json
+import os
 from typing import List, Dict, Any
 
 def save_claims_to_file(claims: List[Dict[str, Any]], video_id: str):
-    """Save extracted claims to a JSON file."""
-    with open(f"{video_id}_claims.json", "w") as f:
+    """Save extracted claims to a JSON file within the claims folder."""
+    # Create claims directory if it doesn't exist
+    claims_dir = os.path.join(os.path.dirname(__file__), "claims")
+    os.makedirs(claims_dir, exist_ok=True)
+    
+    # Save JSON file
+    json_path = os.path.join(claims_dir, f"{video_id}_claims.json")
+    with open(json_path, "w") as f:
         json.dump(claims, f, indent=2)
     
     # Also create a human-readable text version
-    with open(f"{video_id}_claims.txt", "w") as f:
+    txt_path = os.path.join(claims_dir, f"{video_id}_claims.txt")
+    with open(txt_path, "w") as f:
         f.write(f"CONTROVERSIAL CLAIMS EXTRACTED FROM VIDEO {video_id}\n")
         f.write("="*50 + "\n\n")
         
