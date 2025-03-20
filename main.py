@@ -7,6 +7,7 @@ from fastapi import FastAPI
 import uvicorn
 from endpoints import router
 from claim_extraction import process_video_claims
+from fastapi.middleware.cors import CORSMiddleware
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,6 +16,15 @@ app = FastAPI(
     title="YouTube Claims API",
     description="API for processing YouTube videos and extracting controversial claims",
     version="1.0.0"
+)
+
+# Add CORS middleware configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 # Include the router from endpoints
