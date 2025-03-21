@@ -4,7 +4,7 @@ import re
 from youtube_data import extract_youtube_video_id
 from claim_extraction import process_video_claims
 import os
-
+from agent import execute_web_search
 router = APIRouter()
 
 anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -37,3 +37,21 @@ async def execute(request: VideoRequest):
     
     # Implementation will be added later
     return {"claims": claims, "video_title": video_title, "video_id": video_id, "claim_count": len(claims)}
+
+# Define request model for deepsearch endpoint
+class SearchRequest(BaseModel):
+    search_prompt: str
+
+# Deepsearch endpoint
+@router.post("/deepsearch", tags=["Search"])
+async def deepsearch(request: SearchRequest):
+    """
+    Perform a deep search based on the provided search prompt.
+    This endpoint is a placeholder and doesn't contain implementation yet.
+    """
+    
+    response = execute_web_search(request.search_prompt, perplexity_api_key)
+    # Implementation will be added later
+    return response
+
+
