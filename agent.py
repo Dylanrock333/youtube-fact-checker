@@ -156,8 +156,8 @@ def execute_web_search(claimContent: int, perplexity_api_key: str):
                 "content": prompt
             }
         ],
-        "max_tokens": 400,
-        "temperature": 0.5,
+        "max_tokens": 600,
+        "temperature": 0.3,
         "top_p": 0.9,
         "search_domain_filter": None,
         "return_images": False,

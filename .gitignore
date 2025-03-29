@@ -75,6 +75,10 @@ output/
 results/
 temp/
 
+#Other
+perplexity_results.txt
+example_url.txt
+
 # Media files (if not part of the repository)
 # Uncomment if needed
 # *.mp4
