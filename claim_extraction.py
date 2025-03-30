@@ -8,8 +8,8 @@ from typing import List, Dict, Any
 def process_video_claims(video_id: str, api_key: str) -> tuple[List[Dict[str, Any]], str]:
     """Process a YouTube video and extract controversial or questionable factual claims."""
     # Get the transcript and title
-    transcript, video_title = get_transcript(video_id)
-    if not transcript:
+    video_data, transcript = get_transcript(video_id)
+    if not video_data:
         return [], None
     
     # Split transcript into manageable chunks (now returns list of lists)
@@ -27,7 +27,7 @@ def process_video_claims(video_id: str, api_key: str) -> tuple[List[Dict[str, An
         formatted_chunk = format_transcript_for_analysis(chunk)
         
         # Extract claims from the formatted chunk
-        chunk_claims = extract_claims(formatted_chunk, api_key)
+        chunk_claims = extract_claims(formatted_chunk, api_key, video_data)
         
         # Add unique ID to each claim
         for claim in chunk_claims:
@@ -36,4 +36,4 @@ def process_video_claims(video_id: str, api_key: str) -> tuple[List[Dict[str, An
         
         all_claims.extend(chunk_claims)
      
-    return all_claims, video_title
+    return all_claims, video_data

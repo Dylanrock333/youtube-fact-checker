@@ -13,32 +13,39 @@ import os
 
 google_api_key = os.getenv("GOOGLE_API_KEY")
 
-def get_transcript(video_id: str) -> tuple[List[Dict[str, Any]], str]:
+def get_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Retrieve transcript with timestamps and title from a YouTube video."""
     try:
         # Get transcript
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
         
+        youtube_video_data = {
+            "title": None,
+            "tags": None,
+            "channel_title": None,
+            "view_count": None,
+            "published_at": None
+        }
+        
         try:
-            #TODO: Remove this once we have a better way to get the title
-            #TODO: also want to get the description and thumbnail
 
-            video_info = get_video_info(video_id)
-
+            youtube_video_info = get_video_info(video_id)
             
-            print(video_info)
-            
-            video_title = video_info.get("title")
+            youtube_video_data["title"] = youtube_video_info.get("title")
+            youtube_video_data["tags"] = youtube_video_info.get("tags")
+            youtube_video_data["view_count"] = youtube_video_info.get("view_count")
+            youtube_video_data["channel_title"] = youtube_video_info.get("channel_title")
+            youtube_video_data["published_at"] = youtube_video_info.get("published_at")
                 
         except Exception as e:
-            # Return a tuple with the transcript and an error message as the title
-            return transcript, f"Unknown title (Error: {str(e)})"
+            # Set title to error message
+            youtube_video_data["title"] = f"Unknown title (Error: {str(e)})"
         
-        # Return the transcript and title
-        return transcript, video_title
+        # Return the combined data structure
+        return youtube_video_data, transcript
     except Exception as e:
         print(f"An error occurred: {e}")
-        return None, None
+        return None
  
 
 def get_video_info(video_id):
@@ -51,8 +58,7 @@ def get_video_info(video_id):
             part='snippet,contentDetails,statistics',
             id=video_id
         ).execute()
-        print(video_response)
-        # Rest of your code...
+        
     except Exception as e:
         print(f"API Error: {str(e)}")
         return {"error": str(e)}
@@ -68,7 +74,7 @@ def get_video_info(video_id):
     duration = video_data['contentDetails']['duration']
     
     # Create a clean JSON response
-    video_info = {
+    youtube_video_info = {
         "id": video_id,
         "title": video_data['snippet']['title'],
         "description": video_data['snippet']['description'],
@@ -79,10 +85,11 @@ def get_video_info(video_id):
         "view_count": video_data['statistics'].get('viewCount', 0),
         "like_count": video_data['statistics'].get('likeCount', 0),
         "comment_count": video_data['statistics'].get('commentCount', 0),
-        "thumbnails": video_data['snippet']['thumbnails']
+        "thumbnails": video_data['snippet']['thumbnails'],
+        "tags": video_data['snippet']['tags']
     }
     
-    return video_info 
+    return youtube_video_info 
    
 
 def extract_youtube_video_id(input_string: str) -> str:

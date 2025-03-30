@@ -33,25 +33,42 @@ async def execute(request: VideoRequest):
     if not video_id:
         raise HTTPException(status_code=400, detail="Invalid YouTube video ID or URL")
     
-    claims, video_title = process_video_claims(video_id, anthropic_api_key)
+    claims, video_data = process_video_claims(video_id, anthropic_api_key)
     
     # Implementation will be added later
-    return {"claims": claims, "video_title": video_title, "video_id": video_id, "claim_count": len(claims)}
+    return {"claims": claims, "video_data": video_data, "video_id": video_id, "claim_count": len(claims)}
 
 # Define request model for deepsearch endpoint
 class SearchRequest(BaseModel):
-    search_prompt: str
+    claimText: str = None
+    context: str = None
+    videoTitle: str = None
+    videoPublishedAt: str = None
+    videoTags: list = None
+    query: str = None
 
 # Deepsearch endpoint
 @router.post("/deepsearch", tags=["Search"])
 async def deepsearch(request: SearchRequest):
     """
-    Perform a deep search based on the provided search prompt.
-    This endpoint is a placeholder and doesn't contain implementation yet.
+    Perform a deep search based on the provided search prompt and additional context.
+    Uses Perplexity API to verify claims from videos.
     """
+    # Create a video_data dictionary from the individual fields
+    video_data = {
+        "title": request.videoTitle,
+        "published_at": request.videoPublishedAt,
+        "tags": request.videoTags
+    }
     
-    response = execute_web_search(request.search_prompt, perplexity_api_key)
-    # Implementation will be added later
+    response = execute_web_search(
+        perplexity_api_key=perplexity_api_key,
+        claim_text=request.claimText,
+        context=request.context,
+        video_data=video_data,
+        query=request.query
+    )
+    
     return response
 
 

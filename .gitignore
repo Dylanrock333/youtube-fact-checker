@@ -63,6 +63,7 @@ logs/
 *.sqlite3
 *.json.bak
 *.csv.bak
+example_url.txt
 
 # API keys and secrets
 .env.local
@@ -77,7 +78,6 @@ temp/
 
 #Other
 perplexity_results.txt
-example_url.txt
 
 # Media files (if not part of the repository)
 # Uncomment if needed

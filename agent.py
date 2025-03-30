@@ -3,7 +3,7 @@ import json
 from typing import List, Dict, Any
 import requests
 
-def extract_claims(transcript_text: str, api_key: str) -> List[Dict[str, Any]]:
+def extract_claims(transcript_text: str, api_key: str, video_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Extract controversial or potentially incorrect factual claims from transcript text.
     
@@ -39,7 +39,6 @@ def extract_claims(transcript_text: str, api_key: str) -> List[Dict[str, Any]]:
     1. Extract the exact quote containing the controversial/questionable claim
     2. Note the timestamp where it appears
     3. Categorize the type of claim (statistical, historical, scientific, political, etc.)
-
     5. Rate the "internet searchability" on a scale of 1-5:
        - 5: Abundant information available online to verify/reject the claim
        - 4: Significant information available from multiple reliable sources
@@ -101,6 +100,12 @@ def extract_claims(transcript_text: str, api_key: str) -> List[Dict[str, Any]]:
     - context: Surrounding text
     - search_query: Search query for verification
     
+    VIDEO INFO:
+    - title: {video_data["title"]}
+    - tags: {video_data["tags"]}
+    - account_name: {video_data["channel_title"]}
+    - published_at: {video_data["published_at"]}
+    
     TRANSCRIPT:
     {transcript_text}
     """
@@ -134,14 +139,49 @@ def extract_claims(transcript_text: str, api_key: str) -> List[Dict[str, Any]]:
         print(f"Response was: {response.content[0].text}")
         return []
     
-def execute_web_search(claimContent: int, perplexity_api_key: str):
-
-    prompt = f"""
-        {claimContent}
-
+def execute_web_search(perplexity_api_key: str, claim_text: str = None, context: str = None, 
+                      video_data: dict = None, query: str = None):
     """
+    Execute a web search using the Perplexity API with enhanced context.
     
-
+    Args:
+        perplexity_api_key: API key for Perplexity
+        claim_text: The specific claim being verified (optional)
+        context: Additional context from the video (optional)
+        video_data: Metadata about the video (optional)
+        query: A specific search query to use (optional)
+    """
+    # Build a comprehensive prompt with all available information
+    video_title = video_data.get('title', '') if video_data else ''
+    video_published_at = video_data.get('published_at', '') if video_data else ''
+    video_tags = video_data.get('tags', []) if video_data else []
+    
+    prompt = f"""
+        CLAIM:
+        {claim_text}
+        
+        CONTEXT:
+        {context}
+        
+        VIDEO INFO:
+        Caption: {video_title}
+        Published at: {video_published_at}
+        Tags: {video_tags}
+        
+        Please:
+        1. Analyze this claim objectively without political bias
+        2. Find reliable sources that confirm or contradict this claim
+        3. Present evidence from multiple perspectives when relevant
+        4. Note any important nuance, context, or qualifications missing from the original claim
+        5. Assess the overall accuracy on a scale from "Completely False" to "Completely True"
+        6. Explain specifically what parts are accurate or inaccurate if the claim is partially true
+        7. Cite specific sources, studies, statistics or expert consensus that support your assessment
+        
+        Use this search query as a starting point: 
+        {query}
+                """
+    
+    # Rest of the function remains the same
     url = "https://api.perplexity.ai/chat/completions"
 
     payload = {
