@@ -216,4 +216,5 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
 
     response = requests.request("POST", url, json=payload, headers=headers)
     
+    
     return response.json()

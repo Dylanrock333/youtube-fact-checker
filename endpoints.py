@@ -61,14 +61,24 @@ async def deepsearch(request: SearchRequest):
         "tags": request.videoTags
     }
     
-    response = execute_web_search(
-        perplexity_api_key=perplexity_api_key,
-        claim_text=request.claimText,
-        context=request.context,
-        video_data=video_data,
-        query=request.query
-    )
-    
-    return response
+    try:
+        response = execute_web_search(
+            perplexity_api_key=perplexity_api_key,
+            claim_text=request.claimText,
+            context=request.context,
+            video_data=video_data,
+            query=request.query
+        )
+        
+        # Log the response for debugging
+       # print("Response from execute_web_search:", response)
+        
+        return response
+
+    except Exception as e:
+        # Log the error
+        print("Error in deepsearch:", str(e))
+        # Return a JSON response with the error message
+        return {"error": str(e)}
 
 
