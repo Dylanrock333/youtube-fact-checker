@@ -5,12 +5,10 @@ from .youtube_data import extract_youtube_video_id
 from .claim_extraction import process_video_claims
 import os
 from .agent import execute_web_search
+from app.config import get_settings
 
 
 router = APIRouter()
-
-anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
-perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
 
 # Health check endpoint
 @router.get("/health", tags=["Health"])
@@ -35,7 +33,8 @@ async def execute(request: VideoRequest):
     if not video_id:
         raise HTTPException(status_code=400, detail="Invalid YouTube video ID or URL")
     
-    claims, video_data = process_video_claims(video_id, anthropic_api_key)
+    settings = get_settings()
+    claims, video_data = process_video_claims(video_id, settings.anthropic_api_key)
     
     # Implementation will be added later
     return {"claims": claims, "video_data": video_data, "video_id": video_id, "claim_count": len(claims)}
@@ -63,9 +62,10 @@ async def deepsearch(request: SearchRequest):
         "tags": request.videoTags
     }
     
+    settings = get_settings()
     try:
         response = execute_web_search(
-            perplexity_api_key=perplexity_api_key,
+            perplexity_api_key=settings.perplexity_api_key,
             claim_text=request.claimText,
             context=request.context,
             video_data=video_data,
