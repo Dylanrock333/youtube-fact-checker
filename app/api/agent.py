@@ -3,6 +3,9 @@ import json
 from typing import List, Dict, Any
 import requests
 
+# Add Perplexity API URL
+PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
+
 def extract_claims(transcript_text: str, api_key: str, video_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Extract controversial or potentially incorrect factual claims from transcript text.
@@ -214,7 +217,7 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
         "Content-Type": "application/json"
     }
 
-    response = requests.request("POST", url, json=payload, headers=headers)
+    response = requests.request("POST", url=PERPLEXITY_API_URL, json=payload, headers=headers)
     
     
     return response.json()

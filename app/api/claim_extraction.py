@@ -1,8 +1,8 @@
 
 
-from youtube_data import get_transcript
-from formatting import chunk_transcript, format_transcript_for_analysis
-from agent import extract_claims
+from .youtube_data import get_transcript
+from .formatting import chunk_transcript, format_transcript_for_analysis
+from .agent import extract_claims
 from typing import List, Dict, Any
 
 def process_video_claims(video_id: str, api_key: str) -> tuple[List[Dict[str, Any]], str]:

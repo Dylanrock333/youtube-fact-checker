@@ -1,10 +1,12 @@
 from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 import re
-from youtube_data import extract_youtube_video_id
-from claim_extraction import process_video_claims
+from .youtube_data import extract_youtube_video_id
+from .claim_extraction import process_video_claims
 import os
-from agent import execute_web_search
+from .agent import execute_web_search
+
+
 router = APIRouter()
 
 anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")

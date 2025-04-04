@@ -2,7 +2,6 @@ from pytube import YouTube
 from youtube_transcript_api import YouTubeTranscriptApi
 from typing import List, Dict, Any
 import re
-from pytube import YouTube
 import subprocess
 import json
 #from googleapiclient.discovery import build
@@ -86,10 +85,10 @@ def get_video_info(video_id):
         "like_count": video_data['statistics'].get('likeCount', 0),
         "comment_count": video_data['statistics'].get('commentCount', 0),
         "thumbnails": video_data['snippet']['thumbnails'],
-        "tags": video_data['snippet']['tags']
+        "tags": video_data['snippet'].get('tags', [])
     }
     
-    return youtube_video_info 
+    return youtube_video_info
    
 
 def extract_youtube_video_id(input_string: str) -> str:
