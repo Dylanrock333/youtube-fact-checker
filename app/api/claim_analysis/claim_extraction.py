@@ -17,10 +17,10 @@ def _process_chunk(chunk_data: tuple) -> List[Dict[str, Any]]:
     logging.info(f"Starting processing for chunk {index + 1}...") # Log start
     
     formatted_chunk = format_transcript_for_analysis(chunk)
-    claims = extract_claims(formatted_chunk, video_data)
+    claims, input_tokens, output_tokens = extract_claims(formatted_chunk, video_data)
     
     logging.info(f"Finished processing for chunk {index + 1}. Found {len(claims)} claims.") # Log finish
-    return claims
+    return claims, input_tokens, output_tokens
 
 def process_video_claims(video_id: str, origin: str) -> tuple[List[Dict[str, Any]], str]:
     """Process a YouTube video and extract controversial or questionable factual claims."""
@@ -38,6 +38,8 @@ def process_video_claims(video_id: str, origin: str) -> tuple[List[Dict[str, Any
     logging.info(f"Split transcript into {len(transcript_chunks)} chunks for video_id: {video_id}")
     
     all_claims_from_chunks = []
+    total_input_tokens = 0 # Initialize input token counter
+    total_output_tokens = 0 # Initialize output token counter
     with concurrent.futures.ThreadPoolExecutor() as executor:
         chunk_indices = range(len(transcript_chunks))
         video_data_list = itertools.repeat(video_data, len(transcript_chunks))
@@ -45,18 +47,26 @@ def process_video_claims(video_id: str, origin: str) -> tuple[List[Dict[str, Any
         # Combine arguments into tuples for each chunk: (index, chunk, api_key, video_data)
         map_args = zip(chunk_indices, transcript_chunks, video_data_list)
         
-        print(map_args)
+        #print(map_args)
         
         # map executes _process_chunk for each item in map_args concurrently
         results = executor.map(_process_chunk, map_args)
-        
-        for chunk_claims in results:
-            all_claims_from_chunks.append(chunk_claims)
 
-    all_claims = [claim for sublist in all_claims_from_chunks for claim in sublist]
+        for chunk_result in results:
+            chunk_claims, input_tokens, output_tokens = chunk_result # Unpack the result
+            all_claims_from_chunks.extend(chunk_claims) # Use extend for claims list
+            total_input_tokens += input_tokens # Accumulate input tokens
+            total_output_tokens += output_tokens # Accumulate output tokens
 
-    for i, claim in enumerate(all_claims):
+
+    # Flatten the list of claims (already done by extend)
+    # all_claims = [claim for sublist in all_claims_from_chunks for claim in sublist] # No longer needed if using extend
+
+    for i, claim in enumerate(all_claims_from_chunks): # Iterate directly over the extended list
         claim['id'] = i
-     
-    logging.info(f"Extracted {len(all_claims)} claims in total for video_id: {video_id}.") # Log total
-    return all_claims, video_data
+
+    logging.info(f"Extracted {len(all_claims_from_chunks)} claims in total for video_id: {video_id}.") # Log total claims
+    # Log total token counts
+    logging.info(f"Total input tokens used for video_id {video_id}: {total_input_tokens}")
+    logging.info(f"Total output tokens generated for video_id {video_id}: {total_output_tokens}")
+    return all_claims_from_chunks, video_data

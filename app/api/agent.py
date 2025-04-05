@@ -3,6 +3,8 @@ import json
 from typing import List, Dict, Any
 import requests
 from app.config import get_settings
+from google import genai
+import nltk
 # Add Perplexity API URL
 PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 
@@ -18,7 +20,8 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     - internet_searchability: How easily the claim can be verified online (1-5)
     - context: Surrounding text for context
     """
-    client = anthropic.Anthropic(api_key=get_settings().anthropic_api_key)
+    client = genai.Client(api_key=get_settings().google_gemini_api_key)
+    
     prompt = f"""
     You are an expert fact-checker analyzing a YouTube video transcript.
     Identify statements presented as facts that warrant verification, potentially misleading, factually questionable or contreversial.
@@ -64,7 +67,7 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
         - Explains the speaker's apparent purpose or intent when making the claim
         - Notes any qualifiers the speaker used before or after the claim
         - Includes relevant background information that helps understand why this claim was made
-    8. Create an objective research query that will help verify the factual accuracy of this claim. Format it as a detailed research prompt that:
+    8. Create an objective research query that will help substantiate the factual accuracy of this claim. Format it as a detailed research prompt that:
         - Includes key elements of the claim that need verification
         - Provides necessary context from the surrounding discussion
         - Identifies potential sources or types of evidence that would confirm or refute the claim
@@ -95,35 +98,41 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     {transcript_text}
     """
     
-    response = client.messages.create(
-        model="claude-3-5-sonnet-20240620",
-        max_tokens=4000,
-        temperature=0,
-        system="You are an expert fact-checker who identifies potentially controversial, misleading, or factually questionable claims in text.",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
+    input_tokens = len(nltk.word_tokenize(prompt))
+    
+    response = client.models.generate_content(
+        model="gemini-2.0-flash", contents=prompt
     )
     
-    try:
-        # Extract the JSON from the response
-        response_text = response.content[0].text
-        json_start = response_text.find('[')
-        json_end = response_text.rfind(']') + 1
-        
-        if json_start >= 0 and json_end > json_start:
-            json_str = response_text[json_start:json_end]
-            claims = json.loads(json_str)
-            return claims
-        else:
-            print("Could not find JSON in response")
-            return []
-    except Exception as e:
-        print(f"Error parsing response: {e}")
-        print(f"Response was: {response.content[0].text}")
-        return []
+    response_text = response.text
     
-    
+    output_tokens = len(nltk.word_tokenize(response_text))
+
+    try:    
+        # TODO: handle better JSON paresing aka have the model output JSON directly(lower the output tokens)(long video has timestamp that loo like this )
+        # TODO: if there is an error retry the chunk
+        if response_text.startswith("```json"):
+            response_text = response_text[7:] # Remove ```json\n
+        if response_text.endswith("```"):
+            response_text = response_text[:-3] # Remove ```
+            
+        response_text = response_text.strip() # Remove leading/trailing whitespace
+
+        # Parse the cleaned text as JSON
+        claims = json.loads(response_text)
+        return claims, input_tokens, output_tokens
+    except (AttributeError, IndexError, json.JSONDecodeError, Exception) as e:
+        # Handle potential errors if the response structure is unexpected or JSON is invalid
+        print(f"Error processing response: {e}")
+        # Attempt to log the problematic text if possible
+        try:
+            problematic_text = response.candidates[0].content.parts[0].text
+            print(f"Problematic text: {problematic_text}")
+        except Exception as log_e:
+            print(f"Could not extract problematic text: {log_e}")
+            print(f"Full response object: {response}")
+        # Return default values matching the expected tuple structure
+        return [], 0, 0
     
     
 def execute_web_search(perplexity_api_key: str, claim_text: str = None, context: str = None, 
@@ -205,3 +214,4 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
     
     
     return response.json()
+

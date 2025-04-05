@@ -8,6 +8,7 @@ def get_yt_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any
     """Retrieve transcript with timestamps and title from a YouTube video."""
     try:
         # Get transcript
+        #TODO: handle age restrictions
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
         
         youtube_video_data = {

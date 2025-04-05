@@ -3,12 +3,15 @@ from fastapi import FastAPI
 import uvicorn
 from app.api.endpoints import router
 from fastapi.middleware.cors import CORSMiddleware
+import nltk
 
 app = FastAPI(
     title="YouTube Claims API",
     description="API for processing YouTube videos and extracting controversial claims",
     version="1.0.0"
 )
+
+nltk.download('punkt')
 
 # Add CORS middleware configuration
 app.add_middleware(
