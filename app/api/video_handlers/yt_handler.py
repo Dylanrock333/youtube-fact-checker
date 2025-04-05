@@ -8,39 +8,17 @@ def get_yt_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any
     """Retrieve transcript with timestamps and title from a YouTube video."""
     try:
         # Get transcript
-        #TODO: handle age restrictions
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
         
-        youtube_video_data = {
-            "title": None,
-            "tags": None,
-            "channel_title": None,
-            "view_count": None,
-            "published_at": None
-        }
-        
-        try:
 
-            youtube_video_info = get_video_info(video_id)  #TODO: Remove this and have the function call done in the parent function. This has nothing to do with the transcript
-            
-            youtube_video_data["title"] = youtube_video_info.get("title")
-            youtube_video_data["tags"] = youtube_video_info.get("tags")
-            youtube_video_data["view_count"] = youtube_video_info.get("view_count")
-            youtube_video_data["channel_title"] = youtube_video_info.get("channel_title")
-            youtube_video_data["published_at"] = youtube_video_info.get("published_at")
-                
-        except Exception as e:
-            # Set title to error message
-            youtube_video_data["title"] = f"Unknown title (Error: {str(e)})"
-        
-        # Return the combined data structure
-        return youtube_video_data, transcript
+
+        return transcript
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
     
     
-def get_video_info(video_id):
+def get_yt_video_info(video_id):
     settings = get_settings()
     google_api_key = settings.google_api_key
     youtube = googleapiclient.discovery.build('youtube', 'v3', developerKey=google_api_key)
@@ -81,5 +59,23 @@ def get_video_info(video_id):
         "tags": video_data['snippet'].get('tags', [])
     }
     
+    
+    youtube_video_data = {
+        "title": "Unknown title",
+        "tags": [],
+        "channel_title": "Unknown channel title",
+        "view_count": 0,
+        "published_at": "Unknown published at",
+        "duration": "Unknown duration"
+    }
+    
+    youtube_video_data["title"] = youtube_video_info.get("title")
+    youtube_video_data["tags"] = youtube_video_info.get("tags")
+    youtube_video_data["view_count"] = youtube_video_info.get("view_count")
+    youtube_video_data["channel_title"] = youtube_video_info.get("channel_title")
+    youtube_video_data["published_at"] = youtube_video_info.get("published_at")
+    youtube_video_data["duration"] = youtube_video_info.get("duration")
+    #TODO: Fix duration format 
+
     return youtube_video_info
    

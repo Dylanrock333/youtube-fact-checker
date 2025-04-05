@@ -25,7 +25,7 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     client = genai.Client(api_key=get_settings().google_gemini_api_key)
     
     prompt = f"""
-    You are an expert fact-checker analyzing a YouTube video transcript.
+    You are an expert fact-checker analyzing a video transcript.
     Identify statements presented as facts that warrant verification, potentially misleading, factually questionable or contreversial.
     
     Extract claims that:
