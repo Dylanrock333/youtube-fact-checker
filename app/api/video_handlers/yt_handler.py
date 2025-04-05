@@ -4,7 +4,7 @@ import googleapiclient.discovery
 import os
 from app.config import get_settings
 
-def get_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any]]]:
+def get_yt_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Retrieve transcript with timestamps and title from a YouTube video."""
     try:
         # Get transcript

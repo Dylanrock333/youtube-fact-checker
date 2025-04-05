@@ -1,12 +1,8 @@
-from fastapi import APIRouter, FastAPI, HTTPException
-from pydantic import BaseModel
-import re
-from .youtube_data import extract_youtube_video_id
+from fastapi import APIRouter, HTTPException
 from .claim_analysis.claim_extraction import process_video_claims
-import os
 from .agent import execute_web_search
 from app.config import get_settings
-
+from app.schemas import VideoExecutionRequest, DeepSearchRequest
 
 router = APIRouter()
 
@@ -16,41 +12,26 @@ async def health_check():
     """Health check endpoint to verify the API is running."""
     return {"status": "healthy"}
 
-# Define request model for execute endpoint
-class VideoRequest(BaseModel):
-    url: str
-
 # Execute endpoint
 @router.post("/execute", tags=["Processing"])
-async def execute(request: VideoRequest):
+async def execute(request: VideoExecutionRequest):
     """
-    Process a YouTube video and extract controversial claims.
-    This endpoint is a placeholder and doesn't contain implementation yet.
+    Process a video and extract controversial claims.
     """
-    # Extract video ID if a full URL was provided
-    video_id = extract_youtube_video_id(request.url) #TODO: URL validation will be done on the UI side. API call will contain URL, Video ID, and Origin(youtube, X, Facebook, TikTok, etc.)
-    
-    if not video_id:
-        raise HTTPException(status_code=400, detail="Invalid YouTube video ID or URL")
-    
-    settings = get_settings()
-    claims, video_data = process_video_claims(video_id, settings.anthropic_api_key)
-    
-    # Implementation will be added later
-    return {"claims": claims, "video_data": video_data, "video_id": video_id, "claim_count": len(claims)}
+    try:
+        settings = get_settings()
+        claims, video_data = process_video_claims(request.videoID, settings.anthropic_api_key, request.origin)
+        
+        #return ExecuteResponse(claims=claims, video_data=video_data, videoID=request.videoID, claim_count=len(claims))   //TODO: Uncomment this when the schema is implemented(claims, videoData)
+        return {"claims": claims, "video_data": video_data, "videoID": request.videoID, "claim_count": len(claims)}
+    except Exception as e:
+        print(f"Error processing video {request.videoID}: {e}")
+        raise HTTPException(status_code=500, detail="Error processing video")
 
-# Define request model for deepsearch endpoint
-class SearchRequest(BaseModel):
-    claimText: str = None
-    context: str = None
-    videoTitle: str = None
-    videoPublishedAt: str = None
-    videoTags: list = None
-    query: str = None
 
-# Deepsearch endpoint
+# Deepsearch endpoint   
 @router.post("/deepsearch", tags=["Search"])
-async def deepsearch(request: SearchRequest):
+async def deepsearch(request: DeepSearchRequest):
     """
     Perform a deep search based on the provided search prompt and additional context.
     Uses Perplexity API to verify claims from videos.

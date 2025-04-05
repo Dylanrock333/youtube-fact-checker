@@ -1,15 +1,19 @@
 
 
-from ..video_handlers.yt_handler import get_transcript
+from ..video_handlers.yt_handler import get_yt_transcript
 from .formatting import format_transcript_for_analysis
 from ..agent import extract_claims
 from ..transcript_chunking.chunking import chunk_transcript
 from typing import List, Dict, Any
 
-def process_video_claims(video_id: str, api_key: str) -> tuple[List[Dict[str, Any]], str]:
+def process_video_claims(video_id: str, api_key: str, origin: str) -> tuple[List[Dict[str, Any]], str]:
     """Process a YouTube video and extract controversial or questionable factual claims."""
-    # Get the transcript and title
-    video_data, transcript = get_transcript(video_id)
+    
+    if origin == "youtube":
+        video_data, transcript = get_yt_transcript(video_id)
+    else:
+        raise ValueError(f"Unsupported origin: {origin}")
+    
     if not video_data:
         return [], None
     
