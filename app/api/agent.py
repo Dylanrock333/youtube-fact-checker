@@ -2,11 +2,11 @@ import anthropic
 import json
 from typing import List, Dict, Any
 import requests
-
+from app.config import get_settings
 # Add Perplexity API URL
 PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 
-def extract_claims(transcript_text: str, api_key: str, video_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Extract controversial or potentially incorrect factual claims from transcript text.
     
@@ -18,11 +18,7 @@ def extract_claims(transcript_text: str, api_key: str, video_data: Dict[str, Any
     - internet_searchability: How easily the claim can be verified online (1-5)
     - context: Surrounding text for context
     """
-    client = anthropic.Anthropic(api_key=api_key)
-    #TODO: add more to the quote, but this might be done in the transcript processing
-    #TODO: Search query should be presented more ad a question 
-    #TODO: Need just a liitle more in the context 
-    #TODO: look into what other metricks I can use insted of searchability and controversy score
+    client = anthropic.Anthropic(api_key=get_settings().anthropic_api_key)
     prompt = f"""
     You are an expert fact-checker analyzing a YouTube video transcript.
     Identify statements presented as facts that warrant verification, potentially misleading, factually questionable or contreversial.
@@ -37,20 +33,6 @@ def extract_claims(transcript_text: str, api_key: str, video_data: Dict[str, Any
     - Make definitive causal relationships
     - Present absolute statements using words like "always," "never," "all," etc.
     - Present correlation as causation
-        
-    For each claim:
-    1. Extract the exact quote containing the controversial/questionable claim
-    2. Note the timestamp where it appears
-    3. Categorize the type of claim (statistical, historical, scientific, political, etc.)
-    5. Rate the "internet searchability" on a scale of 1-5:
-       - 5: Abundant information available online to verify/reject the claim
-       - 4: Significant information available from multiple reliable sources
-       - 3: Moderate amount of information available with some research
-       - 2: Limited information available, requiring deep research
-       - 1: Very little information available online about this specific claim
-    6. Provide 2-4 sentences of surrounding context elaborating on the claim and the context in which it is made.
-    7. provide an internet search query that can be used to verify the claim.
-    
     
     For each claim:
     1. Extract the exact quote containing the factual claim, including any qualifying phrases, supporting details, or
@@ -126,7 +108,6 @@ def extract_claims(transcript_text: str, api_key: str, video_data: Dict[str, Any
     try:
         # Extract the JSON from the response
         response_text = response.content[0].text
-        # Find JSON in the response (it might be wrapped in markdown code blocks)
         json_start = response_text.find('[')
         json_end = response_text.rfind(']') + 1
         
@@ -141,6 +122,9 @@ def extract_claims(transcript_text: str, api_key: str, video_data: Dict[str, Any
         print(f"Error parsing response: {e}")
         print(f"Response was: {response.content[0].text}")
         return []
+    
+    
+    
     
 def execute_web_search(perplexity_api_key: str, claim_text: str = None, context: str = None, 
                       video_data: dict = None, query: str = None):

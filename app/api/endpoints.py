@@ -19,8 +19,7 @@ async def execute(request: VideoExecutionRequest):
     Process a video and extract controversial claims.
     """
     try:
-        settings = get_settings()
-        claims, video_data = process_video_claims(request.videoID, settings.anthropic_api_key, request.origin)
+        claims, video_data = process_video_claims(request.videoID, request.origin)
         
         #return ExecuteResponse(claims=claims, video_data=video_data, videoID=request.videoID, claim_count=len(claims))   //TODO: Uncomment this when the schema is implemented(claims, videoData)
         return {"claims": claims, "video_data": video_data, "videoID": request.videoID, "claim_count": len(claims)}
