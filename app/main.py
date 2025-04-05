@@ -13,11 +13,10 @@ app = FastAPI(
 # Add CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
-    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 # Include the router from endpoints

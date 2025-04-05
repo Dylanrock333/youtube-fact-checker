@@ -1,8 +1,9 @@
 
 
-from .youtube_data import get_transcript
-from .formatting import chunk_transcript, format_transcript_for_analysis
-from .agent import extract_claims
+from ..video_handlers.yt_handler import get_transcript
+from .formatting import format_transcript_for_analysis
+from ..agent import extract_claims
+from ..transcript_chunking.chunking import chunk_transcript
 from typing import List, Dict, Any
 
 def process_video_claims(video_id: str, api_key: str) -> tuple[List[Dict[str, Any]], str]:
@@ -12,7 +13,7 @@ def process_video_claims(video_id: str, api_key: str) -> tuple[List[Dict[str, An
     if not video_data:
         return [], None
     
-    # Split transcript into manageable chunks (now returns list of lists)
+    # TODO: Keep in mind what format the the transcript is in depending on the origin
     transcript_chunks = chunk_transcript(transcript)
     print(f"Split transcript into {len(transcript_chunks)} chunks")
     
@@ -20,6 +21,9 @@ def process_video_claims(video_id: str, api_key: str) -> tuple[List[Dict[str, An
     all_claims = []
     claim_id = 0  # Initialize a counter for unique claim IDs
     
+    
+    #TODO: Will create for this
+    #TODO: will make parallel function calls to the LLM one for each chunk to speed up the process
     for i, chunk in enumerate(transcript_chunks):
         print(f"Processing chunk {i+1}/{len(transcript_chunks)}...")
         

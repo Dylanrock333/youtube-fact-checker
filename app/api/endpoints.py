@@ -2,7 +2,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 import re
 from .youtube_data import extract_youtube_video_id
-from .claim_extraction import process_video_claims
+from .claim_analysis.claim_extraction import process_video_claims
 import os
 from .agent import execute_web_search
 from app.config import get_settings
@@ -28,7 +28,7 @@ async def execute(request: VideoRequest):
     This endpoint is a placeholder and doesn't contain implementation yet.
     """
     # Extract video ID if a full URL was provided
-    video_id = extract_youtube_video_id(request.url)
+    video_id = extract_youtube_video_id(request.url) #TODO: URL validation will be done on the UI side. API call will contain URL, Video ID, and Origin(youtube, X, Facebook, TikTok, etc.)
     
     if not video_id:
         raise HTTPException(status_code=400, detail="Invalid YouTube video ID or URL")
