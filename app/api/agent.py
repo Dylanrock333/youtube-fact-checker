@@ -5,6 +5,8 @@ import requests
 from app.config import get_settings
 from google import genai
 import nltk
+from app.schemas import ClaimResponse
+
 # Add Perplexity API URL
 PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 
@@ -80,7 +82,7 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     
     Format your response as a JSON array of objects with these fields:
     - claim: The factual statement text
-    - timestamp: The timestamp from the transcript
+    - timestamp: The timestamp from the transcript (HH:MM:SS)
     - category: Type of claim
     - verification_importance: Numeric rating (1-5)
     - controversy_score: Numeric rating (1-5)
@@ -98,28 +100,29 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     {transcript_text}
     """
     
-    input_tokens = len(nltk.word_tokenize(prompt))
-    
-    response = client.models.generate_content(
-        model="gemini-2.0-flash", contents=prompt
-    )
-    
-    response_text = response.text
-    
-    output_tokens = len(nltk.word_tokenize(response_text))
+
 
     try:    
-        # TODO: handle better JSON paresing aka have the model output JSON directly(lower the output tokens)(long video has timestamp that loo like this )
         # TODO: if there is an error retry the chunk
-        if response_text.startswith("```json"):
-            response_text = response_text[7:] # Remove ```json\n
-        if response_text.endswith("```"):
-            response_text = response_text[:-3] # Remove ```
-            
-        response_text = response_text.strip() # Remove leading/trailing whitespace
+        
+        input_tokens = len(nltk.word_tokenize(prompt))
+        
+        response = client.models.generate_content(
+            model="gemini-2.0-flash", 
+            contents=prompt,
+            config={
+                'response_mime_type': 'application/json',
+                'response_schema': list[ClaimResponse],
+            },
+        )
+        
+        
+        response_text = response.text
+        #print(response_text)
+        output_tokens = len(nltk.word_tokenize(response_text))        
 
-        # Parse the cleaned text as JSON
         claims = json.loads(response_text)
+        
         return claims, input_tokens, output_tokens
     except (AttributeError, IndexError, json.JSONDecodeError, Exception) as e:
         # Handle potential errors if the response structure is unexpected or JSON is invalid

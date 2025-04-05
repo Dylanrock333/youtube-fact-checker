@@ -15,6 +15,16 @@ class DeepSearchRequest(BaseModel):
     videoPublishedAt: Optional[str] = None
     videoTags: Optional[List[str]] = None # Optional list of strings
     query: Optional[str] = None
+    
+class ClaimResponse(BaseModel):
+    claim: str
+    timestamp: str
+    category: str
+    verification_importance: int
+    controversy_score: int
+    factual_precision: int
+    context: str
+    search_query: str
 
 # Define response model for execute endpoint
 # class ExecuteResponse(BaseModel):
