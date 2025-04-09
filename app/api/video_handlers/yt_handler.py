@@ -1,7 +1,6 @@
 from youtube_transcript_api import YouTubeTranscriptApi
 from typing import Dict, Any, List
 import googleapiclient.discovery
-import os
 from app.config import get_settings
 
 def get_yt_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any]]]:
@@ -20,8 +19,8 @@ def get_yt_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any
     
 def get_yt_video_info(video_id):
     settings = get_settings()
-    google_api_key = settings.google_api_key
-    youtube = googleapiclient.discovery.build('youtube', 'v3', developerKey=google_api_key)
+    google_yt_api_key = settings.google_yt_api_key
+    youtube = googleapiclient.discovery.build('youtube', 'v3', developerKey=google_yt_api_key)
     
     try:
         video_response = youtube.videos().list(

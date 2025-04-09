@@ -167,46 +167,35 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
         Published at: {video_published_at}
         Tags: {video_tags}
         
-        Please:
-        1. Analyze this claim objectively without political bias
-        2. Find reliable sources that confirm or contradict this claim
-        3. Present evidence from multiple perspectives when relevant
-        4. Note any important nuance, context, or qualifications missing from the original claim
-        5. Assess the overall accuracy on a scale from "Completely False" to "Completely True"
-        6. Explain specifically what parts are accurate or inaccurate if the claim is partially true
-        7. Cite specific sources, studies, statistics or expert consensus that support your assessment
         
         Use this search query as a starting point: 
         {query}
                 """
-    
-    # Rest of the function remains the same
-    url = "https://api.perplexity.ai/chat/completions"
-
+                
+                
+    system_prompt = '''Provide a in depth and informative claim analysis on the following claim:
+        1. Analyze this claim objectively without bias
+        2. Find reliable sources that confirm or contradict this claim
+        3. Present evidence from multiple perspectives when relevant
+        4. Note any important nuance, context, or qualifications missing from the original claim
+        5. Assess the overall accuracy on a scale from "Completely False" to "Completely True"      
+    '''
     payload = {
-        "model": "sonar-pro",
+        "model": "sonar",
         "messages": [
             {
                 "role": "system",
-                "content": "Be precise and concise."
+                "content": system_prompt
             },
             {
                 "role": "user",
                 "content": prompt
             }
         ],
-        "max_tokens": 600,
-        "temperature": 0.3,
+        "max_tokens": 1000,
+        "temperature": 0.2,
         "top_p": 0.9,
-        "search_domain_filter": None,
-        "return_images": False,
-        "return_related_questions": False,
-        "search_recency_filter": "month",
-        "top_k": 0,
-        "stream": False,
-        "presence_penalty": 0,
         "frequency_penalty": 1,
-        "response_format": None
     }
     headers = {
         "Authorization": f"Bearer {perplexity_api_key}",
