@@ -88,7 +88,7 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     - controversy_score: Numeric rating (1-5)
     - factual_precision: Numeric rating (1-5)
     - context: Surrounding text
-    - search_query: Search query for verification
+    - search_query: Detailed search query for verification
     
     VIDEO INFO:
     - title: {video_data["title"]}
@@ -173,7 +173,7 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
                 """
                 
                 
-    system_prompt = '''Provide a in depth and informative claim analysis on the following claim:
+    system_prompt = '''Provide a in depth and informative claim analysis on the following claim and return the results in markdown format:
         1. Analyze this claim objectively without bias
         2. Find reliable sources that confirm or contradict this claim
         3. Present evidence from multiple perspectives when relevant
