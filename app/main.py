@@ -12,6 +12,7 @@ app = FastAPI(
 )
 
 nltk.download('punkt')
+nltk.download('punkt_tab')
 
 # Add CORS middleware configuration
 app.add_middleware(
@@ -23,7 +24,7 @@ app.add_middleware(
 )
 
 # Include the router from endpoints
-app.include_router(router)
+app.include_router(router, prefix="/api")
 
 # Main execution
 if __name__ == "__main__":
