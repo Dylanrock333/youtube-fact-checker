@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 import concurrent.futures
 import itertools
 import logging # Import the logging module
+from fastapi import HTTPException
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -34,7 +35,7 @@ def process_video_claims(video_id: str, origin: str) -> tuple[List[Dict[str, Any
     
     if not video_data or not transcript: 
         logging.warning(f"No video data or transcript found for video_id: {video_id}") # Log warning
-        return [], None 
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve video data or transcript for video ID: {video_id}")
     
     transcript_chunks = chunk_transcript(transcript)
     logging.info(f"Split transcript into {len(transcript_chunks)} chunks for video_id: {video_id}")
