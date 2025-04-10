@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     perplexity_api_key: str
     google_yt_api_key: str
     google_gemini_api_key: str
+    webshare_username: str
+    webshare_password: str
     
     class Config:
         env_file = ".env"

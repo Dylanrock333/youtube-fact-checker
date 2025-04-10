@@ -2,12 +2,35 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from typing import Dict, Any, List
 import googleapiclient.discovery
 from app.config import get_settings
+from youtube_transcript_api.proxies import WebshareProxyConfig
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# Create the API instance with Webshare proxy configuration
+# ytt_api = YouTubeTranscriptApi(
+#     proxy_config=WebshareProxyConfig(
+#         proxy_username=os.getenv("WEBSHARE_USERNAME"),
+#         proxy_password=os.getenv("WEBSHARE_PASSWORD"),
+#     )
+# )
 
 def get_yt_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Retrieve transcript with timestamps and title from a YouTube video."""
     try:
-        # Get transcript
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        # Get settings, including Webshare credentials
+        settings = get_settings()
+
+        # Initialize ytt_api inside the function using settings
+        ytt_api = YouTubeTranscriptApi(
+            proxy_config=WebshareProxyConfig(
+                proxy_username=settings.webshare_username,
+                proxy_password=settings.webshare_password,
+            )
+        )
+
+        transcript = ytt_api.get_transcript(video_id)
         
 
 
