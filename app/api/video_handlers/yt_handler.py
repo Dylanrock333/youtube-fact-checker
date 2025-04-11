@@ -5,7 +5,7 @@ from app.config import get_settings
 from youtube_transcript_api.proxies import WebshareProxyConfig
 from dotenv import load_dotenv
 import os
-
+import logging
 load_dotenv()
 
 settings = get_settings()
@@ -21,18 +21,12 @@ ytt_api = YouTubeTranscriptApi(
 def get_yt_transcript(video_id: str) -> List[Dict[str, Any]]: # Updated return type hint
     """Retrieve transcript with timestamps and title from a YouTube video."""
     try:
-
+        logging.info("getting transcript for video id: ", video_id)
         raw_transcript = ytt_api.fetch(video_id)
 
-        # # Format the transcript into the desired list of dictionaries
-        # formatted_transcript = [
-        #     {"text": snippet['text'], "start": snippet['start'], "duration": snippet['duration']}
-        #     for snippet in raw_transcript
-        # ]
         
         formatted_transcript = raw_transcript.to_raw_data()
 
-        print(formatted_transcript) 
         #TODO: Have a standart transcript format schema that is used for all video origins
         return formatted_transcript
     except Exception as e:
@@ -44,6 +38,8 @@ def get_yt_video_info(video_id):
     settings = get_settings()
     google_yt_api_key = settings.google_yt_api_key
     youtube = googleapiclient.discovery.build('youtube', 'v3', developerKey=google_yt_api_key)
+    
+    logging.info("getting video info for video id: ", video_id)
     
     try:
         video_response = youtube.videos().list(
