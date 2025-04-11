@@ -17,20 +17,26 @@ ytt_api = YouTubeTranscriptApi(
     )
 )
 
-def get_yt_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    
+def get_yt_transcript(video_id: str) -> List[Dict[str, Any]]: # Updated return type hint
     """Retrieve transcript with timestamps and title from a YouTube video."""
     try:
-        # Get settings, including Webshare credentials
 
- 
+        raw_transcript = ytt_api.fetch(video_id)
 
-        transcript = ytt_api.fetch(video_id)
+        # # Format the transcript into the desired list of dictionaries
+        # formatted_transcript = [
+        #     {"text": snippet['text'], "start": snippet['start'], "duration": snippet['duration']}
+        #     for snippet in raw_transcript
+        # ]
         
+        formatted_transcript = raw_transcript.to_raw_data()
 
-
-        return transcript
+        print(formatted_transcript) 
+        #TODO: Have a standart transcript format schema that is used for all video origins
+        return formatted_transcript
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred while fetching/formatting transcript: {e}")
         return None
     
     
@@ -85,13 +91,13 @@ def get_yt_video_info(video_id):
         "duration": "Unknown duration"
     }
     
-    # youtube_video_data["title"] = youtube_video_info.get("title")
-    # youtube_video_data["tags"] = youtube_video_info.get("tags")
-    # youtube_video_data["view_count"] = youtube_video_info.get("view_count")
-    # youtube_video_data["channel_title"] = youtube_video_info.get("channel_title")
-    # youtube_video_data["published_at"] = youtube_video_info.get("published_at")
-    # youtube_video_data["duration"] = youtube_video_info.get("duration")
+    youtube_video_data["title"] = youtube_video_info.get("title")
+    youtube_video_data["tags"] = youtube_video_info.get("tags")
+    youtube_video_data["view_count"] = youtube_video_info.get("view_count")
+    youtube_video_data["channel_title"] = youtube_video_info.get("channel_title")
+    youtube_video_data["published_at"] = youtube_video_info.get("published_at")
+    youtube_video_data["duration"] = youtube_video_info.get("duration")
     #TODO: Fix duration format 
 
-    return youtube_video_data
+    return youtube_video_info
    
