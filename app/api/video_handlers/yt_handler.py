@@ -21,7 +21,7 @@ ytt_api = YouTubeTranscriptApi(
 def get_yt_transcript(video_id: str) -> List[Dict[str, Any]]: # Updated return type hint
     """Retrieve transcript with timestamps and title from a YouTube video."""
     try:
-        logging.info("getting transcript for video id: ", video_id)
+        logging.info(f"getting transcript for video id: {video_id}")
         raw_transcript = ytt_api.fetch(video_id)
 
         
@@ -30,7 +30,7 @@ def get_yt_transcript(video_id: str) -> List[Dict[str, Any]]: # Updated return t
         #TODO: Have a standart transcript format schema that is used for all video origins
         return formatted_transcript
     except Exception as e:
-        print(f"An error occurred while fetching/formatting transcript: {e}")
+        logging.error(f"An error occurred while fetching/formatting transcript: {e}")
         return None
     
     
@@ -39,7 +39,7 @@ def get_yt_video_info(video_id):
     google_yt_api_key = settings.google_yt_api_key
     youtube = googleapiclient.discovery.build('youtube', 'v3', developerKey=google_yt_api_key)
     
-    logging.info("getting video info for video id: ", video_id)
+    logging.info(f"getting video info for video id: {video_id}")
     
     try:
         video_response = youtube.videos().list(
@@ -48,7 +48,7 @@ def get_yt_video_info(video_id):
         ).execute()
         
     except Exception as e:
-        print(f"API Error: {str(e)}")
+        logging.error(f"API Error: {str(e)}")
         return {"error": str(e)}
     
     # Check if video exists

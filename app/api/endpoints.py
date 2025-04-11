@@ -3,7 +3,7 @@ from .claim_analysis.claim_extraction import process_video_claims
 from .agent import execute_web_search
 from app.config import get_settings
 from app.schemas import VideoExecutionRequest, DeepSearchRequest
-
+import logging
 router = APIRouter()
 
 # Health check endpoint
@@ -25,7 +25,7 @@ async def execute(request: VideoExecutionRequest):
         #return ExecuteResponse(claims=claims, video_data=video_data, videoID=request.videoID, claim_count=len(claims))   //TODO: Uncomment this when the schema is implemented(claims, videoData)
         return {"claims": claims, "video_data": video_data, "videoID": request.videoID, "claim_count": len(claims)}
     except Exception as e:
-        print(f"Error processing video {request.videoID}: {e}")
+        logging.error(f"Error processing video {request.videoID}: {e}")
         raise HTTPException(status_code=500, detail="Error processing video")
 
 
@@ -54,13 +54,13 @@ async def deepsearch(request: DeepSearchRequest):
         )
         
         # Log the response for debugging
-       # print("Response from execute_web_search:", response)
+       # logging.info("Response from execute_web_search:", response)
         
         return response
 
     except Exception as e:
         # Log the error
-        print("Error in deepsearch:", str(e))
+        logging.error("Error in deepsearch:", str(e))
         # Return a JSON response with the error message
         return {"error": str(e)}
 
