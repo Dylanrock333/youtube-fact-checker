@@ -85,13 +85,13 @@ def get_yt_video_info(video_id):
         "duration": "Unknown duration"
     }
     
-    youtube_video_data["title"] = youtube_video_info.get("title")
-    youtube_video_data["tags"] = youtube_video_info.get("tags")
-    youtube_video_data["view_count"] = youtube_video_info.get("view_count")
-    youtube_video_data["channel_title"] = youtube_video_info.get("channel_title")
-    youtube_video_data["published_at"] = youtube_video_info.get("published_at")
-    youtube_video_data["duration"] = youtube_video_info.get("duration")
+    # youtube_video_data["title"] = youtube_video_info.get("title")
+    # youtube_video_data["tags"] = youtube_video_info.get("tags")
+    # youtube_video_data["view_count"] = youtube_video_info.get("view_count")
+    # youtube_video_data["channel_title"] = youtube_video_info.get("channel_title")
+    # youtube_video_data["published_at"] = youtube_video_info.get("published_at")
+    # youtube_video_data["duration"] = youtube_video_info.get("duration")
     #TODO: Fix duration format 
 
-    return youtube_video_info
+    return youtube_video_data
    
