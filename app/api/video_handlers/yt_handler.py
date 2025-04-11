@@ -8,27 +8,21 @@ import os
 
 load_dotenv()
 
-# Create the API instance with Webshare proxy configuration
-# ytt_api = YouTubeTranscriptApi(
-#     proxy_config=WebshareProxyConfig(
-#         proxy_username=os.getenv("WEBSHARE_USERNAME"),
-#         proxy_password=os.getenv("WEBSHARE_PASSWORD"),
-#     )
-# )
+settings = get_settings()
+# Initialize ytt_api inside the function using settings
+ytt_api = YouTubeTranscriptApi(
+    proxy_config=WebshareProxyConfig(
+        proxy_username=settings.webshare_username,
+        proxy_password=settings.webshare_password,
+    )
+)
 
 def get_yt_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Retrieve transcript with timestamps and title from a YouTube video."""
     try:
         # Get settings, including Webshare credentials
-        settings = get_settings()
 
-        # Initialize ytt_api inside the function using settings
-        ytt_api = YouTubeTranscriptApi(
-            proxy_config=WebshareProxyConfig(
-                proxy_username=settings.webshare_username,
-                proxy_password=settings.webshare_password,
-            )
-        )
+ 
 
         transcript = ytt_api.get_transcript(video_id)
         
