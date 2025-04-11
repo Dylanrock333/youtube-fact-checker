@@ -24,7 +24,7 @@ def get_yt_transcript(video_id: str) -> tuple[Dict[str, Any], List[Dict[str, Any
 
  
 
-        transcript = ytt_api.get_transcript(video_id)
+        transcript = ytt_api.fetch(video_id)
         
 
 
