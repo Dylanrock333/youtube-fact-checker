@@ -7,6 +7,9 @@ def chunk_transcript(transcript: List[Dict[str, Any]], chunk_size: int = 10000) 
     Returns a list of lists, where each inner list contains transcript entries
     with a total text size under the chunk_size limit.
     """
+    
+    #TODO: Implement a time based chunking method with some overlap
+    
     chunks = []
     current_chunk = []
     current_size = 0
