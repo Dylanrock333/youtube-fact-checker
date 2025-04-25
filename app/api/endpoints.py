@@ -1,10 +1,16 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from .claim_analysis.claim_extraction import process_video_claims
 from .agent import execute_web_search
 from app.config import get_settings
 from app.schemas import VideoExecutionRequest, DeepSearchRequest
 import logging
+
 router = APIRouter()
+
+# Get the limiter from the app state
+def get_limiter():
+    from app.main import limiter
+    return limiter
 
 # Health check endpoint
 @router.get("/health", tags=["Health"])
@@ -14,7 +20,8 @@ async def health_check():
 
 # Execute endpoint
 @router.post("/execute", tags=["Processing"])
-async def execute(request: VideoExecutionRequest):
+@get_limiter().limit("3/hour")
+async def execute(request: VideoExecutionRequest, request_obj: Request):
     """
     Process a video and extract controversial claims.
     """
@@ -31,7 +38,8 @@ async def execute(request: VideoExecutionRequest):
 
 # Deepsearch endpoint   
 @router.post("/deepsearch", tags=["Search"])
-async def deepsearch(request: DeepSearchRequest):
+@get_limiter().limit("10/hour")
+async def deepsearch(request: DeepSearchRequest, request_obj: Request):
     """
     Perform a deep search based on the provided search prompt and additional context.
     Uses Perplexity API to verify claims from videos.
