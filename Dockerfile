@@ -9,6 +9,8 @@ RUN python -m nltk.downloader punkt punkt_tab
 
 COPY . .
 
+ENV ENVIRONMENT=prod
+
 # Create a non-root user for security
 RUN useradd -m appuser  
 USER appuser

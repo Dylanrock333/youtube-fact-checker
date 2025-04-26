@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     webshare_username: str
     webshare_password: str
     
+    environment: str = "dev"
+    frontend_url: str = "https://youtube-fact-chekcer-ui.onrender.com"
+    
     class Config:
         env_file = ".env"
         env_file_encoding = 'utf-8'

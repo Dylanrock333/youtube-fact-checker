@@ -11,10 +11,11 @@ from slowapi.util import get_remote_address
 import logging
 from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
-
+from app.config import get_settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+settings = get_settings()
 
 app = FastAPI(
     title="YouTube Claims API",
@@ -43,13 +44,27 @@ async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
     )
 
 # Add CORS middleware configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
-)
+if settings.environment.lower() == "dev":
+    # Development mode - allow localhost
+    logger.info("Running in DEVELOPMENT mode with permissive CORS")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Adjust ports as needed
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    # Production mode - only allow specific frontend
+    logger.info(f"Running in PRODUCTION mode with restricted CORS to {settings.frontend_url}")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[settings.frontend_url],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+    )
+
 
 # Include the router from endpoints
 app.include_router(router, prefix="/api")
