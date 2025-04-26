@@ -4,15 +4,17 @@ import uvicorn
 from app.api.endpoints import router
 from fastapi.middleware.cors import CORSMiddleware
 import nltk
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from app.utility import get_client_ip
+from app.utility import limiter
+from slowapi.util import get_remote_address
 import logging
 from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 app = FastAPI(
     title="YouTube Claims API",
@@ -21,11 +23,11 @@ app = FastAPI(
 )
 
 nltk.download('punkt')
-nltk.download('punkt_tab')
+nltk.download('punkt_tab') #TODO: Do I need this?
 
-# Initialize rate limiter
-limiter = Limiter(key_func=get_client_ip)
+#initialize the limiter
 app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Custom rate limit handler
 @app.exception_handler(RateLimitExceeded)
@@ -51,9 +53,6 @@ app.add_middleware(
 
 # Include the router from endpoints
 app.include_router(router, prefix="/api")
-
-# # Add rate limit handler to app
-# app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Main execution
 if __name__ == "__main__":

@@ -1,18 +1,30 @@
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from fastapi import Request
 import logging
 
-logger = logging.getLogger(__name__)
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
-def get_client_ip(request: Request):
-    # Check for X-Forwarded-For header (used by most proxies)
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        # The first IP in the list is the client IP
-        client_ip = forwarded_for.split(",")[0].strip()
-        logger.info(f"Client IP from X-Forwarded-For: {client_ip}")
-        return client_ip
+def limitter_logger(request: Request, endpoint: str):
+    try:
+        #print(request.state.view_rate_limit)
+        
+        rate_limit_info = request.state.view_rate_limit
+        
+        limit_str = rate_limit_info[0]
+        #limit = int(limit_str.split(' ')[0])
+        # current = int(rate_limit_info[1])
+        # remaining = limit - current #TODO: Add remaining find out how to do this
+        ip = get_remote_address(request)
+        
+        logging.info(f"Rate limit for IP {ip}: {limit_str} for /{endpoint} endpoint")
+    except Exception as e:
+        logging.error(f"Error in rate limit logging: {str(e)}")
+        # Log the actual structure for debugging
+        logging.debug(f"Rate limit info structure: {request.state.view_rate_limit}")
     
-    # Fallback to direct client IP
-    client_ip = request.client.host
-    logger.info(f"Client IP from request: {client_ip}")
-    return client_ip
+
+# # Function to get the limiter (optional, but can be useful for consistency)
+# def get_limiter() -> Limiter:
+#     return limiter
