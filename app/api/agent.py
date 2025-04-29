@@ -138,7 +138,15 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
         # Return default values matching the expected tuple structure
         return [], 0, 0
     
-    
+#TODO: Deep search find a better model that has citations, good summary, and cheaper
+'''
+- Play around with perplexity api
+- you.com
+- paperpal
+-Scite
+-Originality.AI
+-LongShot
+'''
 def execute_web_search(perplexity_api_key: str, claim_text: str = None, context: str = None, 
                       video_data: dict = None, query: str = None):
     """
@@ -208,3 +216,11 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
     
     return response.json()
 
+#TODO:SPEECH TO TEXT
+'''
+- Whisper
+- AssemblyAI
+- Deepgram
+- Speechmatics 
+- Groq-distil-whisper
+'''
