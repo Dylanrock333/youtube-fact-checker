@@ -23,10 +23,10 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     - context: Surrounding text for context
     """
     client = genai.Client(api_key=get_settings().google_gemini_api_key)
-    
+        #TODO: Fix time stamp
     prompt = f"""
     You are an expert fact-checker analyzing a video transcript.
-    Identify statements presented as facts that warrant verification, potentially misleading, factually questionable or contreversial.
+    Identify selective statements presented as facts that warrant verification, potentially misleading, factually questionable or contreversial and provide a detailed analysis of the claim.
     
     Extract claims that:
     - Contradict common knowledge or scientific consensus
@@ -39,13 +39,24 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     - Present absolute statements using words like "always," "never," "all," etc.
     - Present correlation as causation
     
+    IGNORE obviously true statements of common knowledge
+    IGNORE opinions clearly framed as such ("I believe," "I think," etc.)
+    IGNORE opinions, hypotheticals, or personal preferences. 
+    IGNORE statements that are not presented as facts.
+    
     For each claim:
     1. Extract the exact quote containing the factual claim, including any qualifying phrases, supporting details, or
     contextual elements that are part of the same thought or argument. This should be comprehensive enough to stand on its 
     own for verification purposes.
-    2. Note the timestamp where it appears
-    3. Categorize the claim (statistical, historical, scientific, legal, causal, political, etc.)
-    4. Rate "verification importance" on a scale of 1-5:
+    2. Provide comprehensive context for the claim (4-6 sentences) that:
+        - Captures what led up to this statement in the video
+        - Provides necessary context from the surrounding discussion
+        - Explains the speaker's apparent purpose or intent when making the claim
+        - Notes any qualifiers the speaker used before or after the claim
+        - Includes relevant background information that helps understand why this claim was made
+    3. Note the timestamp where it appears
+    4. Categorize the claim in a single word (statistical, historical, scientific, legal, causal, political, etc.)
+    5. Rate "verification importance" on a scale of 1-5:
         - 5: Central to the speaker's argument and likely to influence viewers
         - 4: Significant claim that shapes understanding of the topic
         - 3: Moderately important claim that adds context to the discussion
@@ -63,12 +74,6 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
         - 3: Somewhat misleading or lacking important context
         - 2: Slightly oversimplified but not entirely wrong
         - 1: Potentially misleading framing of otherwise accurate information
-    7. Provide comprehensive context for the claim (4-6 sentences) that:
-        - Captures what led up to this statement in the video
-        - Provides necessary context from the surrounding discussion
-        - Explains the speaker's apparent purpose or intent when making the claim
-        - Notes any qualifiers the speaker used before or after the claim
-        - Includes relevant background information that helps understand why this claim was made
     8. Create an objective research query that will help substantiate the factual accuracy of this claim. Format it as a detailed research prompt that:
         - Includes key elements of the claim that need verification
         - Provides necessary context from the surrounding discussion
@@ -76,18 +81,14 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
         - Asks for an evaluation of supporting and contradicting evidence
         - Requests identification of any nuance, complexity, or qualifications missing from the original claim
     
-    IGNORE obviously true statements of common knowledge
-    IGNORE opinions clearly framed as such ("I believe," "I think," etc.)
-    IGNORE opinions, hypotheticals, or personal preferences.  
-    
     Format your response as a JSON array of objects with these fields:
-    - claim: The factual statement text
+    - claim: The factual statement quoted from the transcript only 
+    - context: a summary of the context for the claim (3-5 sentences)
     - timestamp: The timestamp from the transcript (HH:MM:SS)
     - category: Type of claim
     - verification_importance: Numeric rating (1-5)
     - controversy_score: Numeric rating (1-5)
     - factual_precision: Numeric rating (1-5)
-    - context: Surrounding text
     - search_query: Detailed search query for verification
     
     VIDEO INFO:
@@ -108,7 +109,7 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
         input_tokens = len(nltk.word_tokenize(prompt))
         
         response = client.models.generate_content(
-            model="gemini-2.0-flash", 
+            model="gemini-2.5-flash-preview-04-17", 
             contents=prompt,
             config={
                 'response_mime_type': 'application/json',
