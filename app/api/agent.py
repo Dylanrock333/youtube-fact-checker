@@ -10,6 +10,12 @@ from app.schemas import ClaimResponse
 # Add Perplexity API URL
 PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 
+#GEMINI_MODEL = "gemini-2.5-flash-preview-04-17" # INPUT: $0.15 per 1M tokens, OUTPUT: $0.60 per 1M tokens (Best results, cost effective, slower) 
+GEMINI_MODEL = "gemini-2.0-flash-lite" # INPUT: $0.075 per 1M tokens, OUTPUT: $0.30 per 1M tokens (good results, cost efficient, low latency) (Fastest and best for now)
+
+#GEMINI_MODEL = "gemini-2.5-pro-preview-03-25" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Great thinking, expensive)
+#GEMINI_MODEL = "gemini-2.0-flash" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.40 per 1M tokens (multi-modal, good for images ect)
+
 def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Extract controversial or potentially incorrect factual claims from transcript text.
@@ -89,8 +95,8 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     - verification_importance: Numeric rating (1-5)
     - controversy_score: Numeric rating (1-5)
     - factual_precision: Numeric rating (1-5)
-    - search_query: Detailed search query for verification
-    
+    - search_query: Detailed search query for verification (2-4 sentences)
+     
     VIDEO INFO:
     - title: {video_data["title"]}
     - tags: {video_data["tags"]}
@@ -109,7 +115,7 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
         input_tokens = len(nltk.word_tokenize(prompt))
         
         response = client.models.generate_content(
-            model="gemini-2.5-flash-preview-04-17", 
+            model=GEMINI_MODEL, 
             contents=prompt,
             config={
                 'response_mime_type': 'application/json',
