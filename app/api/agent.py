@@ -202,7 +202,7 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
     '''
 
     payload = {
-        "model": "sonar-pro",
+        "model": "sonar",
         "messages": [
             {
                 "role": "system",
@@ -213,7 +213,7 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
                 "content": prompt
             }
         ],
-        "max_tokens": 1000,
+        "max_tokens": 1500,
         "temperature": 0.2,
         "top_p": 0.9,
         "frequency_penalty": 1,   
