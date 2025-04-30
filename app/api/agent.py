@@ -6,12 +6,12 @@ from app.config import get_settings
 from google import genai
 import nltk
 from app.schemas import ClaimResponse
-
+from datetime import datetime
 # Add Perplexity API URL
 PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 
 #GEMINI_MODEL = "gemini-2.5-flash-preview-04-17" # INPUT: $0.15 per 1M tokens, OUTPUT: $0.60 per 1M tokens (Best results, cost effective, slower) 
-GEMINI_MODEL = "gemini-2.0-flash-lite" # INPUT: $0.075 per 1M tokens, OUTPUT: $0.30 per 1M tokens (good results, cost efficient, low latency) (Fastest and best for now)
+GEMINI_MODEL = "gemini-2.0-flash-lite" # INPUT: $0.075 per 1M tokens, OUTPUT: $0.30 per 1M tokens (good results, cost efficient, low latency) (Fastest and best for now) (Need it to elaborate more for context and search query)
 
 #GEMINI_MODEL = "gemini-2.5-pro-preview-03-25" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Great thinking, expensive)
 #GEMINI_MODEL = "gemini-2.0-flash" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.40 per 1M tokens (multi-modal, good for images ect)
@@ -89,13 +89,13 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     
     Format your response as a JSON array of objects with these fields:
     - claim: The factual statement quoted from the transcript only 
-    - context: a summary of the context for the claim (3-5 sentences)
+    - context: a summary of the context for the claim that explains the claim and the context leading up to it (3-5 sentences)
     - timestamp: The timestamp from the transcript (HH:MM:SS)
     - category: Type of claim
     - verification_importance: Numeric rating (1-5)
     - controversy_score: Numeric rating (1-5)
     - factual_precision: Numeric rating (1-5)
-    - search_query: Detailed search query for verification (2-4 sentences)
+    - search_query: A detailed search query for verification of the claim (3-4 sentences)
      
     VIDEO INFO:
     - title: {video_data["title"]}
@@ -169,6 +169,7 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
     video_title = video_data.get('title', '') if video_data else ''
     video_published_at = video_data.get('published_at', '') if video_data else ''
     video_tags = video_data.get('tags', []) if video_data else []
+    category = '' #TODO: Add category
     
     prompt = f"""
         CLAIM:
@@ -178,14 +179,16 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
         {context}
         
         VIDEO INFO:
-        Caption: {video_title}
-        Published at: {video_published_at}
-        Tags: {video_tags}
-        
+        Video Title: {video_title}
+        Publication Date: {video_published_at}
+        Video Tags: {video_tags}  
+        Current Date: {datetime.now().strftime('%Y-%m-%d')} 
         
         Use this search query as a starting point: 
         {query}
-                """
+        
+
+    """
                 
                 
     system_prompt = '''Provide a in depth and informative claim analysis on the following claim and return the results in markdown format:
@@ -193,10 +196,13 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
         2. Find reliable sources that confirm or contradict this claim
         3. Present evidence from multiple perspectives when relevant
         4. Note any important nuance, context, or qualifications missing from the original claim
-        5. Assess the overall accuracy on a scale from "Completely False" to "Completely True"      
+        5. Assess the overall accuracy on a scale from "Completely False" to "Completely True"    
+        
+        No line devider between the sections please
     '''
+
     payload = {
-        "model": "sonar",
+        "model": "sonar-pro",
         "messages": [
             {
                 "role": "system",
@@ -210,7 +216,7 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
         "max_tokens": 1000,
         "temperature": 0.2,
         "top_p": 0.9,
-        "frequency_penalty": 1,
+        "frequency_penalty": 1,   
     }
     headers = {
         "Authorization": f"Bearer {perplexity_api_key}",
@@ -218,7 +224,8 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
     }
 
     response = requests.request("POST", url=PERPLEXITY_API_URL, json=payload, headers=headers)
-    
+     
+    print(response.json())
     
     return response.json()
 
