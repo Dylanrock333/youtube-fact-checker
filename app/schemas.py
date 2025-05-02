@@ -17,14 +17,14 @@ class DeepSearchRequest(BaseModel):
     query: Optional[str] = None
     
 class ClaimResponse(BaseModel):
+    title: str
     claim: str
+    context: str
     timestamp: str
     category: str
-    verification_importance: int
     controversy_score: int
-    factual_precision: int
-    context: str
     search_query: str
+    
 
 # Define response model for execute endpoint
 # class ExecuteResponse(BaseModel):
