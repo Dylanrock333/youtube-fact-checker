@@ -5,6 +5,8 @@ from app.config import get_settings
 from app.schemas import VideoExecutionRequest, DeepSearchRequest
 import logging
 from app.utility import limiter, limitter_logger
+from .video_handlers.yt_handler import get_video_browse_list
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -74,4 +76,31 @@ async def deepsearch(payload: DeepSearchRequest, request: Request):
         # Return a JSON response with the error message
         return {"error": str(e)}
 
+
+@router.get("/home_list", tags=["Browse"])
+async def get_video_home_list(request: Request, days_before: int = 14):
+    """
+    Get a list of videos for the home page.
+    
+    Args:
+        days_before: Number of days before current date to search from (default: 7)
+    """
+    
+    # Format dates in ISO 8601 format as required by YouTube API
+    current_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    past_date = (datetime.now() - timedelta(days=days_before)).strftime("%Y-%m-%dT%H:%M:%SZ")
+     
+    query = "controversial OR long form podcast OR informative OR news OR conspiracy OR conspiracy theory OR interview"
+    max_results = 500
+    published_after = past_date
+    published_before = current_date
+    video_category_id = "22"
+    relevance_language = "en"
+    
+    try:
+        video_list = get_video_browse_list(query, max_results, published_after, published_before, video_category_id, relevance_language)
+        return video_list
+    except Exception as e:
+        logging.error(f"Error getting video home list: {e}")
+        raise HTTPException(status_code=500, detail="Error getting video home list")
 
