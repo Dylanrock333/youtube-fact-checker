@@ -91,7 +91,7 @@ async def get_video_home_list(request: Request, days_before: int = 14):
     past_date = (datetime.now() - timedelta(days=days_before)).strftime("%Y-%m-%dT%H:%M:%SZ")
      
     query = "controversial OR long form podcast OR informative OR news OR conspiracy OR conspiracy theory OR interview"
-    max_results = 500
+    max_results = 50
     published_after = past_date
     published_before = current_date
     video_category_id = "22"

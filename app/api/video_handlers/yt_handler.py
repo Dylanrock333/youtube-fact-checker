@@ -1,6 +1,7 @@
 from youtube_transcript_api import YouTubeTranscriptApi
 from typing import Dict, Any, List
 import googleapiclient.discovery
+import httplib2
 from app.config import get_settings
 from youtube_transcript_api.proxies import WebshareProxyConfig
 from dotenv import load_dotenv
@@ -18,7 +19,30 @@ ytt_api = YouTubeTranscriptApi(
     )
 )
 
+# Function to create a YouTube API client with proxy
+def get_youtube_client(api_key):
+    """Create a YouTube API client with proxy configuration."""
+    settings = get_settings()
     
+    # Set up proxy with authentication
+    proxy_info = httplib2.ProxyInfo(
+        proxy_type=httplib2.socks.PROXY_TYPE_HTTP,
+        proxy_host=settings.webshare_proxy_host,  # You'll need to add this to your settings
+        proxy_port=settings.webshare_proxy_port,  # You'll need to add this to your settings
+        proxy_user=settings.webshare_username,
+        proxy_pass=settings.webshare_password
+    )
+    
+    # Create an HTTP object with the proxy
+    http = httplib2.Http(proxy_info=proxy_info)
+    
+    # Build the YouTube client with the proxied HTTP object
+    return googleapiclient.discovery.build(
+        'youtube', 'v3', 
+        developerKey=api_key,
+        http=http
+    )
+
 def get_yt_transcript(video_id: str) -> List[Dict[str, Any]]: # Updated return type hint
     """Retrieve transcript with timestamps and title from a YouTube video."""
     try:
@@ -123,7 +147,9 @@ def get_video_browse_list(query: str = None, max_results: int = 10,
     """
     settings = get_settings()
     google_yt_api_key = settings.google_yt_api_key
-    youtube = googleapiclient.discovery.build('youtube', 'v3', developerKey=google_yt_api_key)
+    
+    # Use the proxied YouTube client
+    youtube = get_youtube_client(google_yt_api_key)
 
     if not query:
         query = "politics OR documentary OR controversial OR podcast OR informative"
