@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     google_gemini_api_key: str
     webshare_username: str
     webshare_password: str
+    webshare_proxy_host: str
+    webshare_proxy_port: int
     
     environment: str = "dev"
     frontend_url: str = "https://youtube-fact-chekcer-ui.onrender.com"
