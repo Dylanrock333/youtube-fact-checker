@@ -51,52 +51,42 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> List[Dic
     IGNORE statements that are not presented as facts.
     
     For each claim:
-    1. Extract the exact quote containing the factual claim, including any qualifying phrases, supporting details, or
-    contextual elements that are part of the same thought or argument. This should be comprehensive enough to stand on its 
-    own for verification purposes.
-    2. Provide comprehensive context for the claim (4-6 sentences) that:
-        - Captures what led up to this statement in the video
-        - Provides necessary context from the surrounding discussion
-        - Explains the speaker's apparent purpose or intent when making the claim
-        - Notes any qualifiers the speaker used before or after the claim
-        - Includes relevant background information that helps understand why this claim was made
-    3. Note the timestamp where it appears
-    4. Categorize the claim in a single word (statistical, historical, scientific, legal, causal, political, etc.)
-    5. Rate "verification importance" on a scale of 1-5:
-        - 5: Central to the speaker's argument and likely to influence viewers
-        - 4: Significant claim that shapes understanding of the topic
-        - 3: Moderately important claim that adds context to the discussion
-        - 2: Minor claim that has limited impact on the overall message
-        - 1: Peripheral claim with minimal significance to the discussion
-    5. Rate "factual precision" on a scale of 1-5:
-        - 5: Highly specific claim with clear, verifiable components
-        - 4: Specific claim with mostly verifiable elements
-        - 3: Moderately specific claim with some verifiable elements
-        - 2: Somewhat vague claim that's difficult but possible to verify
-        - 1: Very general claim that's challenging to definitively verify
-    6. Rate the "controversy score" on a scale of 1-5:
-        - 5: Highly controversial, directly contradicts established consensus
-        - 4: Significantly surprising or questionable given available evidence
-        - 3: Somewhat misleading or lacking important context
-        - 2: Slightly oversimplified but not entirely wrong
-        - 1: Potentially misleading framing of otherwise accurate information
-    8. Create an objective research query that will help substantiate the factual accuracy of this claim. Format it as a detailed research prompt that:
-        - Includes key elements of the claim that need verification
-        - Provides necessary context from the surrounding discussion
-        - Identifies potential sources or types of evidence that would confirm or refute the claim
-        - Asks for an evaluation of supporting and contradicting evidence
-        - Requests identification of any nuance, complexity, or qualifications missing from the original claim
-    
+        1. Generate a very short and simple title that summarizes the claim
+        2. Extract the exact quote containing the factual claim, including any qualifying phrases, supporting details, or
+        contextual elements that are part of the same thought or argument. This should be comprehensive enough to stand on its 
+        own for verification purposes.
+        3. Provide comprehensive context for the claim (4-6 sentences) that:
+            - Captures what led up to this statement in the video
+            - Provides necessary context from the surrounding discussion
+            - Explains the speaker's apparent purpose or intent when making the claim
+            - Notes any qualifiers the speaker used before or after the claim
+            - Includes relevant background information that helps understand why this claim was made
+        4. Note the timestamp where it appears
+        5. Categorize the claim in a single word (statistical, historical, scientific, legal, causal, political, etc.)
+        6. Rate the "controversy score" on a scale of 1-5:
+            - 5: Highly controversial, directly contradicts established consensus
+            - 4: Significantly surprising or questionable given available evidence
+            - 3: Somewhat misleading or lacking important context
+            - 2: Slightly oversimplified but not entirely wrong
+            - 1: Potentially misleading framing of otherwise accurate information
+        7. Create an objective research query that will help substantiate the factual accuracy of this claim. Format it as a detailed research prompt that (3-4 sentences):
+            - Includes key elements of the claim that need verification
+            - Provides necessary context from the surrounding discussion
+            - Identifies potential sources or types of evidence that would confirm or refute the claim
+            - Asks for an evaluation of supporting and contradicting evidence
+            - Requests identification of any nuance, complexity, or qualifications missing from the original claim
+        
     Format your response as a JSON array of objects with these fields:
+    - title: A short and simple title that summarizes the claim stated as a question (less than 1 s)
     - claim: The factual statement quoted from the transcript only 
     - context: a summary of the context for the claim that explains the claim and the context leading up to it (3-5 sentences)
     - timestamp: The timestamp from the transcript (HH:MM:SS)
     - category: Type of claim
-    - verification_importance: Numeric rating (1-5)
     - controversy_score: Numeric rating (1-5)
-    - factual_precision: Numeric rating (1-5)
     - search_query: A detailed search query for verification of the claim (3-4 sentences)
      
+    ...
+    
     VIDEO INFO:
     - title: {video_data["title"]}
     - tags: {video_data["tags"]}
