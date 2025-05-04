@@ -174,7 +174,7 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
         Video Tags: {video_tags}  
         Current Date: {datetime.now().strftime('%Y-%m-%d')} 
         
-        Use this search query as a starting point: 
+        Use the question from the search query as a starting point: 
         {query}
         
 
@@ -188,7 +188,7 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
         4. Note any important nuance, context, or qualifications missing from the original claim
         5. Assess the overall accuracy on a scale from "Completely False" to "Completely True"    
         
-        No line devider between the sections please
+        No line divider between the sections please
     '''
 
     payload = {
