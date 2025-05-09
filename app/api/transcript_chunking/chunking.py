@@ -1,7 +1,16 @@
 from typing import List, Dict, Any
 
+#chunk size is 
+# 5000 for 3hr  83 claims, 31 chunks
+# 6000 for 3hr 74 claims, 26 chunks
+# 7000 for 3hr 61 claims, 20 chunks
+# 8000 for 3hr 84 claims, 19 chunks
+# 9000 for 3hr 67 claims, 17 chunks
+# 10000 for 3hr 65 claims, 16 chunks
+# 11000 for 3hr 72 claims, 14 chunks
+# 12000 for 3hr 61 claims, 13 chunks
 
-def chunk_transcript(transcript: List[Dict[str, Any]], chunk_size: int = 10000) -> List[List[Dict[str, Any]]]:
+def chunk_transcript(transcript: List[Dict[str, Any]], chunk_size: int = 8000) -> List[List[Dict[str, Any]]]:
     """
     Split transcript into chunks to handle API context limits.
     Returns a list of lists, where each inner list contains transcript entries
