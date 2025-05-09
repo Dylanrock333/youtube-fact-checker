@@ -13,8 +13,11 @@ ENV ENVIRONMENT=prod
 
 # Create a non-root user for security
 RUN useradd -m appuser  
-USER appuser
 
+# Create the directory and set ownership BEFORE switching user
 RUN mkdir -p /videoAnalytics && chown -R appuser:appuser /videoAnalytics
+
+# Switch to the non-root user
+USER appuser
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
