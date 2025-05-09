@@ -12,6 +12,8 @@ import logging
 from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
 from app.config import get_settings
+from app.analytics import AnalyticsDB
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,12 @@ nltk.download('punkt_tab') #TODO: Do I need this?
 #initialize the limiter
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Add this near the top of your file, after other imports
+analytics_db = AnalyticsDB()
+
+# Add to your FastAPI app
+app.state.analytics_db = analytics_db
 
 # Custom rate limit handler
 @app.exception_handler(RateLimitExceeded)

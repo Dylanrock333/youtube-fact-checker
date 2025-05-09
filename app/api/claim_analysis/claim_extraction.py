@@ -72,4 +72,4 @@ def process_video_claims(video_id: str, origin: str) -> tuple[List[Dict[str, Any
     # Log total token counts
     logging.info(f"Total input tokens used for video_id {video_id}: {total_input_tokens}")
     logging.info(f"Total output tokens generated for video_id {video_id}: {total_output_tokens}")
-    return all_claims_from_chunks, video_data
+    return all_claims_from_chunks, video_data, total_input_tokens, total_output_tokens
