@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 
 class AnalyticsDB:
@@ -81,7 +81,7 @@ class AnalyticsDB:
                 processing_time_ms, error_message
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
-                datetime.now().isoformat(),
+                datetime.now(timezone.utc).isoformat(),
                 video_id,
                 video_title,
                 origin,
