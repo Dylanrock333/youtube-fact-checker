@@ -23,7 +23,7 @@ def get_analytics_db(request: Request):
 
 # Execute endpoint
 @router.post("/execute", tags=["Processing"])
-@limiter.limit("15/hour")
+@limiter.limit("25/hour")
 async def execute(
     payload: VideoExecutionRequest, 
     request: Request,

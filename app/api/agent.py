@@ -10,8 +10,8 @@ from datetime import datetime
 # Add Perplexity API URL
 PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 
-#GEMINI_MODEL = "gemini-2.5-flash-preview-04-17" # INPUT: $0.15 per 1M tokens, OUTPUT: $0.60 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
-GEMINI_MODEL = "gemini-2.0-flash-lite" # INPUT: $0.075 per 1M tokens, OUTPUT: $0.30 per 1M tokens (good results, cost efficient, low latency) (Need it to elaborate more for context and search query) 16 sec for 3hr 61 claims
+GEMINI_MODEL = "gemini-2.5-flash-preview-04-17" # INPUT: $0.15 per 1M tokens, OUTPUT: $0.60 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
+#GEMINI_MODEL = "gemini-2.0-flash-lite" # INPUT: $0.075 per 1M tokens, OUTPUT: $0.30 per 1M tokens (good results, cost efficient, low latency) (Need it to elaborate more for context and search query) 16 sec for 3hr 61 claims
 
 #GEMINI_MODEL = "gemini-2.5-pro-preview-05-06" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Best results, super slow, expensive) 2min 6sec for 3hr 135 claims
 #GEMINI_MODEL = "gemini-2.0-flash" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.40 per 1M tokens (multi-modal, good for images ect) 16 sec for 3hr 54 claims
