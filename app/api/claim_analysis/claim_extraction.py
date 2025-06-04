@@ -31,7 +31,8 @@ async def process_video_claims(video_id: str, origin: str, language: str) -> tup
     #TODO: Have standard way of getting transcript
     if origin == "youtube":
         transcript = get_yt_transcript(video_id)
-        video_data = get_yt_video_info(video_id)
+        video_data = await get_yt_video_info(video_id, language)
+        #logging.info(f"video_data: {video_data}")
     else:
         raise ValueError(f"Unsupported origin: {origin}")
     

@@ -6,6 +6,7 @@ from youtube_transcript_api.proxies import WebshareProxyConfig
 from dotenv import load_dotenv
 import os
 import logging
+from app.api.video_handlers.translate import translate_full_prompt, get_lanage_instruction
 load_dotenv()
 
 settings = get_settings()
@@ -94,6 +95,8 @@ def get_yt_video_info(video_id):
     youtube_video_data["published_at"] = youtube_video_info.get("published_at")
     youtube_video_data["duration"] = youtube_video_info.get("duration")
     #TODO: Fix duration format 
+    
+    
 
     return youtube_video_info
    
