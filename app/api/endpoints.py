@@ -32,6 +32,7 @@ async def execute(
     """
     Process a video and extract controversial claims.
     """
+    
     limitter_logger(request, "execute")
     start_time = time.time()
     video_data_from_processing = {} # Initialize to ensure it's always defined for logging
@@ -41,7 +42,8 @@ async def execute(
         claims, video_data_from_processing, input_tokens, output_tokens = await process_video_claims(payload.videoID, payload.origin, payload.selectedLanguage)
         
         # Calculate processing time
-        processing_time_ms = int((time.time() - start_time) * 1000)
+        processing_time_seconds = round(time.time() - start_time, 2)
+        processing_time_ms = int(processing_time_seconds * 1000)  # Keep ms for analytics DB
         
         
         # Log successful request
@@ -56,6 +58,9 @@ async def execute(
             processing_time_ms=processing_time_ms
         )
         
+        # Log endpoint processing time
+        logging.info(f"Execute endpoint for video {payload.videoID} completed in {processing_time_seconds}s")
+        
         return {
             "claims": claims, 
             "video_data": video_data_from_processing, 
@@ -64,7 +69,8 @@ async def execute(
         }
     except Exception as e:
         # Calculate processing time even for errors
-        processing_time_ms = int((time.time() - start_time) * 1000)
+        processing_time_seconds = round(time.time() - start_time, 2)
+        processing_time_ms = int(processing_time_seconds * 1000)  # Keep ms for analytics DB
         
         # Log failed request
         analytics_db.log_video_processing(
@@ -76,7 +82,7 @@ async def execute(
             error_message=str(e)
         )
         
-        logging.error(f"Error processing video {payload.videoID}: {e}")
+        logging.error(f"Execute endpoint for video {payload.videoID} failed after {processing_time_seconds}s: {e}")
         raise HTTPException(status_code=500, detail="Error processing video")
 
 
@@ -90,6 +96,7 @@ async def deepsearch(payload: DeepSearchRequest, request: Request):
     """
     
     limitter_logger(request, "deepsearch")
+    start_time = time.time()
     
     # Create a video_data dictionary from the individual fields
     video_data = {
@@ -100,13 +107,20 @@ async def deepsearch(payload: DeepSearchRequest, request: Request):
     
     settings = get_settings()
     try:
-        response = execute_web_search(
+        response = await execute_web_search(
             perplexity_api_key=settings.perplexity_api_key,
             claim_text=payload.claimText,
             context=payload.context,
             video_data=video_data,
-            query=payload.query
+            query=payload.query,
+            language=payload.selectedLanguage
         )
+        
+        # Calculate processing time
+        processing_time_seconds = round(time.time() - start_time, 2)
+        
+        # Log successful deepsearch
+        logging.info(f"Deepsearch endpoint completed in {processing_time_seconds}s for claim: {payload.claimText[:50]}...")
         
         # Log the response for debugging
        # logging.info("Response from execute_web_search:", response)
@@ -114,8 +128,11 @@ async def deepsearch(payload: DeepSearchRequest, request: Request):
         return response
 
     except Exception as e:
-        # Log the error
-        logging.error("Error in deepsearch:", str(e))
+        # Calculate processing time even for errors
+        processing_time_seconds = round(time.time() - start_time, 2)
+        
+        # Log the error with timing
+        logging.error(f"Deepsearch endpoint failed after {processing_time_seconds}s: {str(e)}")
         # Return a JSON response with the error message
         return {"error": str(e)}
 

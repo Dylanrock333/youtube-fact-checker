@@ -16,6 +16,7 @@ class DeepSearchRequest(BaseModel):
     videoPublishedAt: Optional[str] = None
     videoTags: Optional[List[str]] = None # Optional list of strings
     query: Optional[str] = None
+    selectedLanguage: str = "en"
     
 class ClaimResponse(BaseModel):
     title: str
