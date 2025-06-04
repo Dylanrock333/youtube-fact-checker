@@ -7,23 +7,25 @@ import concurrent.futures
 import itertools
 import logging # Import the logging module
 from fastapi import HTTPException
+import asyncio # Add asyncio import
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Helper function to process a single chunk
-def _process_chunk(chunk_data: tuple) -> List[Dict[str, Any]]:
+async def _process_chunk(chunk_data: tuple) -> List[Dict[str, Any]]: # Make async
     """Formats a chunk and extracts claims. Expects a tuple: (index, chunk, api_key, video_data)."""
     index, chunk, video_data, language = chunk_data 
     logging.info(f"Starting processing for chunk {index + 1}...") # Log start
     
     formatted_chunk = format_transcript_for_analysis(chunk)
-    claims, input_tokens, output_tokens = extract_claims(formatted_chunk, video_data, language)
+    # Await the async extract_claims function
+    claims, input_tokens, output_tokens = await extract_claims(formatted_chunk, video_data, language)
     
     logging.info(f"Finished processing for chunk {index + 1}. Found {len(claims)} claims.") # Log finish
     return claims, input_tokens, output_tokens
 
-def process_video_claims(video_id: str, origin: str, language: str) -> tuple[List[Dict[str, Any]], str]:
+async def process_video_claims(video_id: str, origin: str, language: str) -> tuple[List[Dict[str, Any]], str]: # Make async
     """Process a YouTube video and extract controversial or questionable factual claims."""
     
     #TODO: Have standard way of getting transcript
@@ -43,25 +45,21 @@ def process_video_claims(video_id: str, origin: str, language: str) -> tuple[Lis
     all_claims_from_chunks = []
     total_input_tokens = 0 # Initialize input token counter
     total_output_tokens = 0 # Initialize output token counter
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        chunk_indices = range(len(transcript_chunks))
-        video_data_list = itertools.repeat(video_data, len(transcript_chunks))
-        language_list = itertools.repeat(language, len(transcript_chunks))
-        
-        # Combine arguments into tuples for each chunk: (index, chunk, video_data, language)
-        map_args = zip(chunk_indices, transcript_chunks, video_data_list, language_list)
-        
-        #print(map_args)
-        
-        # map executes _process_chunk for each item in map_args concurrently
-        results = executor.map(_process_chunk, map_args)
+    
+    # Prepare arguments for asyncio.gather
+    tasks = []
+    for i, chunk in enumerate(transcript_chunks):
+        chunk_data = (i, chunk, video_data, language)
+        tasks.append(_process_chunk(chunk_data))
+    
+    # Run all chunk processing tasks concurrently
+    results = await asyncio.gather(*tasks)
 
-        for chunk_result in results:
-            chunk_claims, input_tokens, output_tokens = chunk_result # Unpack the result
-            all_claims_from_chunks.extend(chunk_claims) # Use extend for claims list
-            total_input_tokens += input_tokens # Accumulate input tokens
-            total_output_tokens += output_tokens # Accumulate output tokens
-
+    for chunk_result in results:
+        chunk_claims, input_tokens, output_tokens = chunk_result # Unpack the result
+        all_claims_from_chunks.extend(chunk_claims) # Use extend for claims list
+        total_input_tokens += input_tokens # Accumulate input tokens
+        total_output_tokens += output_tokens # Accumulate output tokens
 
     # Flatten the list of claims (already done by extend)
     # all_claims = [claim for sublist in all_claims_from_chunks for claim in sublist] # No longer needed if using extend

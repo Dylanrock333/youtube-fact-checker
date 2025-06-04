@@ -19,7 +19,7 @@ GEMINI_MODEL = "gemini-2.0-flash-lite" # INPUT: $0.075 per 1M tokens, OUTPUT: $0
 #GEMINI_MODEL = "gemini-2.5-pro-preview-05-06" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Best results, super slow, expensive) 2min 6sec for 3hr 135 claims
 #GEMINI_MODEL = "gemini-2.0-flash" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.40 per 1M tokens (multi-modal, good for images ect) 16 sec for 3hr 54 claims
 
-def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: str) -> List[Dict[str, Any]]:
+async def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: str) -> List[Dict[str, Any]]:
     """
     Extract controversial or potentially incorrect factual claims from transcript text.
     
@@ -100,9 +100,16 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: s
     {transcript_text}
     """
     
-    logging.info(f"language: {language}")
+    #logging.info(f"language: {language}")
     
-    
+    if language != 'en':
+        final_prompt = await translate_full_prompt(prompt, language)
+        language_instruction = get_language_instruction(language)
+        final_prompt = f"{language_instruction}\n\n{final_prompt}"
+    else:
+        final_prompt = prompt
+        
+    #logging.info(f"final_prompt: {final_prompt}")
 
     try:    
         # TODO: if there is an error retry the chunk
@@ -111,7 +118,7 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: s
         
         response = client.models.generate_content(
             model=GEMINI_MODEL, 
-            contents=prompt,
+            contents=final_prompt,
             config={
                 'response_mime_type': 'application/json',
                 'response_schema': list[ClaimResponse],
