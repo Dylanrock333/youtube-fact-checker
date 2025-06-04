@@ -6,6 +6,7 @@ class VideoExecutionRequest(BaseModel):
     url: str
     origin: str
     videoID: str
+    selectedLanguage: str = "en"
 
 # Define request model for deepsearch endpoint
 class DeepSearchRequest(BaseModel):

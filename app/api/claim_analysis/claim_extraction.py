@@ -14,16 +14,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Helper function to process a single chunk
 def _process_chunk(chunk_data: tuple) -> List[Dict[str, Any]]:
     """Formats a chunk and extracts claims. Expects a tuple: (index, chunk, api_key, video_data)."""
-    index, chunk, video_data = chunk_data 
+    index, chunk, video_data, language = chunk_data 
     logging.info(f"Starting processing for chunk {index + 1}...") # Log start
     
     formatted_chunk = format_transcript_for_analysis(chunk)
-    claims, input_tokens, output_tokens = extract_claims(formatted_chunk, video_data)
+    claims, input_tokens, output_tokens = extract_claims(formatted_chunk, video_data, language)
     
     logging.info(f"Finished processing for chunk {index + 1}. Found {len(claims)} claims.") # Log finish
     return claims, input_tokens, output_tokens
 
-def process_video_claims(video_id: str, origin: str) -> tuple[List[Dict[str, Any]], str]:
+def process_video_claims(video_id: str, origin: str, language: str) -> tuple[List[Dict[str, Any]], str]:
     """Process a YouTube video and extract controversial or questionable factual claims."""
     
     #TODO: Have standard way of getting transcript
@@ -46,9 +46,10 @@ def process_video_claims(video_id: str, origin: str) -> tuple[List[Dict[str, Any
     with concurrent.futures.ThreadPoolExecutor() as executor:
         chunk_indices = range(len(transcript_chunks))
         video_data_list = itertools.repeat(video_data, len(transcript_chunks))
+        language_list = itertools.repeat(language, len(transcript_chunks))
         
-        # Combine arguments into tuples for each chunk: (index, chunk, api_key, video_data)
-        map_args = zip(chunk_indices, transcript_chunks, video_data_list)
+        # Combine arguments into tuples for each chunk: (index, chunk, video_data, language)
+        map_args = zip(chunk_indices, transcript_chunks, video_data_list, language_list)
         
         #print(map_args)
         
