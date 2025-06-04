@@ -37,7 +37,7 @@ async def execute(
     video_data_from_processing = {} # Initialize to ensure it's always defined for logging
 
     try:
-        claims, video_data_from_processing, input_tokens, output_tokens = process_video_claims(payload.videoID, payload.origin)
+        claims, video_data_from_processing, input_tokens, output_tokens = process_video_claims(payload.videoID, payload.origin, payload.selectedLanguage)
         
         # Calculate processing time
         processing_time_ms = int((time.time() - start_time) * 1000)

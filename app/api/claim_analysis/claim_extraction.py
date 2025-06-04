@@ -12,18 +12,19 @@ from fastapi import HTTPException
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Helper function to process a single chunk
-def _process_chunk(chunk_data: tuple) -> List[Dict[str, Any]]:
+def _process_chunk(chunk_data: tuple, language: str) -> List[Dict[str, Any]]:
     """Formats a chunk and extracts claims. Expects a tuple: (index, chunk, api_key, video_data)."""
+    logging.info(f"Processing chunk in {language} language")
     index, chunk, video_data = chunk_data 
     logging.info(f"Starting processing for chunk {index + 1}...") # Log start
     
     formatted_chunk = format_transcript_for_analysis(chunk)
-    claims, input_tokens, output_tokens = extract_claims(formatted_chunk, video_data)
+    claims, input_tokens, output_tokens = extract_claims(formatted_chunk, video_data, language)
     
     logging.info(f"Finished processing for chunk {index + 1}. Found {len(claims)} claims.") # Log finish
     return claims, input_tokens, output_tokens
 
-def process_video_claims(video_id: str, origin: str) -> tuple[List[Dict[str, Any]], str]:
+def process_video_claims(video_id: str, origin: str, language: str) -> tuple[List[Dict[str, Any]], str]:
     """Process a YouTube video and extract controversial or questionable factual claims."""
     
     #TODO: Have standard way of getting transcript
@@ -53,7 +54,7 @@ def process_video_claims(video_id: str, origin: str) -> tuple[List[Dict[str, Any
         #print(map_args)
         
         # map executes _process_chunk for each item in map_args concurrently
-        results = executor.map(_process_chunk, map_args)
+        results = executor.map(_process_chunk, map_args, language)
 
         for chunk_result in results:
             chunk_claims, input_tokens, output_tokens = chunk_result # Unpack the result

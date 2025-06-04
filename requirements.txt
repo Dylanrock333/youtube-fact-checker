@@ -10,3 +10,4 @@ youtube-transcript-api>=1.0.3
 nltk>=3.9.1
 requests>=2.32.3
 slowapi>=0.1.9
+googletrans>=4.0.0

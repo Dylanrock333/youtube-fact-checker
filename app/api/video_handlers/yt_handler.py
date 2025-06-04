@@ -23,9 +23,10 @@ def get_yt_transcript(video_id: str) -> List[Dict[str, Any]]: # Updated return t
     try:
         logging.info(f"getting transcript for video id: {video_id}")
         raw_transcript = ytt_api.fetch(video_id)
-
-        
+        #logging.info(f"Transcript: {raw_transcript}")
         formatted_transcript = raw_transcript.to_raw_data()
+        
+        
 
         #TODO: Have a standart transcript format schema that is used for all video origins
         return formatted_transcript
