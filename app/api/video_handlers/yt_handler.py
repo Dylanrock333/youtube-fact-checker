@@ -113,6 +113,7 @@ async def get_yt_video_info(video_id, language):
     #TODO: Fix duration format 
     
     try:
+        logging.info(f"Translating title to {language}")
         translated_title = await translate_full_prompt(youtube_video_info.get("title"), language)
         youtube_video_data["title"] = translated_title
     except Exception as e:

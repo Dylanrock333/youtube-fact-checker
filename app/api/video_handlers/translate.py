@@ -5,7 +5,6 @@ translator = Translator()
 
 async def translate_full_prompt(prompt: str, target_language: str) -> str:
     """Translate entire prompt before sending to LLM"""
-    logging.info(f"Translating prompt to {target_language}")
     if target_language == 'en':
         return prompt
     
