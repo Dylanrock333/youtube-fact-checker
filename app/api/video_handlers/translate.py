@@ -1,15 +1,13 @@
 from googletrans import Translator
 import logging
 
-translator = Translator()
-
 async def translate_full_prompt(prompt: str, target_language: str) -> str:
     """Translate entire prompt before sending to LLM"""
     if target_language == 'en':
         return prompt
     
     try:
-        # Translate the entire prompt at once for consistency
+        translator = Translator()
         result = await translator.translate(prompt, dest=target_language)
         logging.info(f"Translated prompt to {target_language}")
         return result.text
