@@ -80,6 +80,7 @@ def _extract_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
             'subtitleslangs': ['en'],
             'outtmpl': os.path.join(tmp_dir, '%(id)s.%(ext)s'),
             'quiet': True,
+            'cookies': '/app/cookies/cookies.txt', 
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
