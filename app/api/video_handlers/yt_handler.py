@@ -1,5 +1,5 @@
 from youtube_transcript_api import YouTubeTranscriptApi
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import googleapiclient.discovery
 from app.config import get_settings
 from youtube_transcript_api.proxies import WebshareProxyConfig
@@ -12,32 +12,117 @@ from datetime import datetime
 from babel.numbers import format_decimal
 from babel.dates import format_date
 from babel import Locale
+import time
+import yt_dlp
+import tempfile
+import json
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
 load_dotenv()
 
+# Configuration
+MAX_RETRIES = 20
+
 settings = get_settings()
-# Initialize ytt_api inside the function using settings
-ytt_api = YouTubeTranscriptApi(
-    proxy_config=WebshareProxyConfig(
-        proxy_username=settings.webshare_username,
-        proxy_password=settings.webshare_password,
-    )
-)
+# # Initialize ytt_api inside the function using settings
+# ytt_api = YouTubeTranscriptApi(
+#     proxy_config=WebshareProxyConfig(
+#         proxy_username=settings.webshare_username,
+#         proxy_password=settings.webshare_password,
+#     )
+# )
 
+# def get_yt_transcript(video_id: str) -> List[Dict[str, Any]]: # Updated return type hint
+#     """Retrieve transcript with timestamps and title from a YouTube video."""
     
-def get_yt_transcript(video_id: str) -> List[Dict[str, Any]]: # Updated return type hint
-    """Retrieve transcript with timestamps and title from a YouTube video."""
-    try:
-        logging.info(f"getting transcript for video id: {video_id}")
-        raw_transcript = ytt_api.fetch(video_id)
+#     for attempt in range(MAX_RETRIES):
+#         try:
+#             logging.info(f"getting transcript for video id: {video_id} (attempt {attempt + 1}/{MAX_RETRIES})")
+            
+#             raw_transcript = ytt_api.fetch(video_id)
+#             formatted_transcript = raw_transcript.to_raw_data()
 
-        
-        formatted_transcript = raw_transcript.to_raw_data()
+#             #TODO: Have a standart transcript format schema that is used for all video origins
+#             logging.info(f"Successfully retrieved transcript for video id: {video_id}")
+#             logging.info(f"formatted_transcript: {formatted_transcript}")
+#             return formatted_transcript
+            
+#         except Exception as e:
+#             logging.warning(f"Attempt {attempt + 1}/{MAX_RETRIES} failed for video id {video_id}: {e}")
+            
+#             # If this was the last attempt, log error and return None
+#             if attempt == MAX_RETRIES - 1:
+#                 logging.error(f"All {MAX_RETRIES} attempts failed for video id {video_id}. Final error: {e}")
+#                 return None
+            
+#             # Wait a bit before retrying (exponential backoff)
+#             wait_time = 2
+#             logging.info(f"Waiting {wait_time} seconds before retry...")
+#             time.sleep(wait_time)
 
-        #TODO: Have a standart transcript format schema that is used for all video origins
+
+# You can reuse this executor app-wide (best placed globally)
+executor = ThreadPoolExecutor(max_workers=4)  # Keep small for 0.5 CPU
+
+def _extract_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
+    url = f"https://www.youtube.com/watch?v={video_id}"
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        ydl_opts = {
+            'writesubtitles': True,
+            'writeautomaticsub': True,
+            'subtitlesformat': 'json3',
+            'skip_download': True,
+            'subtitleslangs': ['en'],
+            'outtmpl': os.path.join(tmp_dir, '%(id)s.%(ext)s'),
+            'quiet': True,
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+
+        subs = info.get("requested_subtitles", {})
+        if not subs:
+            logging.warning(f"No subtitles found for video: {video_id}")
+            return None
+
+        lang_key = next(iter(subs))
+        ext = subs[lang_key]["ext"]
+        json_path = os.path.join(tmp_dir, f"{video_id}.{lang_key}.{ext}")
+        if not os.path.exists(json_path):
+            logging.warning(f"Subtitle file not found at path: {json_path}")
+            return None
+
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        formatted_transcript = []
+        for event in data.get("events", []):
+            if "segs" not in event:
+                continue
+            text = "".join(seg.get("utf8", "") for seg in event["segs"]).strip()
+            if not text:
+                continue
+            start = event["tStartMs"] / 1000
+            duration = event.get("dDurationMs", 0) / 1000
+            formatted_transcript.append({
+                "text": text,
+                "start": round(start, 2),
+                "duration": round(duration, 2)
+            })
+
         return formatted_transcript
+
+# Public facing function with safety
+def get_yt_transcript(video_id: str, timeout_seconds: int = 15) -> Optional[List[Dict[str, Any]]]:
+    try:
+        future = executor.submit(_extract_transcript, video_id)
+        result = future.result(timeout=timeout_seconds)
+        return result
+    except FuturesTimeoutError:
+        logging.error(f"Timeout while fetching transcript for video: {video_id}")
+        return None
     except Exception as e:
-        logging.error(f"An error occurred while fetching/formatting transcript: {e}")
+        logging.exception(f"Error during transcript retrieval: {e}")
         return None
     
     
