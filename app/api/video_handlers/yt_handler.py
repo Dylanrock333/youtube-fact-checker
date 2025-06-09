@@ -23,6 +23,11 @@ load_dotenv()
 # Configuration
 MAX_RETRIES = 20
 
+#transcript handling
+MAX_DURATION = 13.0  # max combined duration in seconds
+MAX_CHARS = 750     # optional limit for character count
+
+                
 settings = get_settings()
 # # Initialize ytt_api inside the function using settings
 # ytt_api = YouTubeTranscriptApi(
@@ -96,18 +101,45 @@ def _extract_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
             data = json.load(f)
 
         formatted_transcript = []
+        buffer_text = ""
+        buffer_start = None
+        buffer_duration = 0.0
+
         for event in data.get("events", []):
             if "segs" not in event:
                 continue
             text = "".join(seg.get("utf8", "") for seg in event["segs"]).strip()
             if not text:
                 continue
+
             start = event["tStartMs"] / 1000
             duration = event.get("dDurationMs", 0) / 1000
+
+            # Initialize buffer
+            if buffer_start is None:
+                buffer_start = start
+
+            # Check if adding this would exceed max limits
+            if (buffer_duration + duration > MAX_DURATION) or (len(buffer_text) + len(text) > MAX_CHARS):
+                formatted_transcript.append({
+                    "text": buffer_text.strip(),
+                    "start": round(buffer_start, 2),
+                    "duration": round(buffer_duration, 2)
+                })
+                # Reset buffer
+                buffer_text = text
+                buffer_start = start
+                buffer_duration = duration
+            else:
+                buffer_text += " " + text
+                buffer_duration += duration
+
+        # Add any remaining buffer after the loop
+        if buffer_text:
             formatted_transcript.append({
-                "text": text,
-                "start": round(start, 2),
-                "duration": round(duration, 2)
+                "text": buffer_text.strip(),
+                "start": round(buffer_start, 2),
+                "duration": round(buffer_duration, 2)
             })
 
         return formatted_transcript
@@ -117,6 +149,8 @@ def get_yt_transcript(video_id: str, timeout_seconds: int = 15) -> Optional[List
     try:
         future = executor.submit(_extract_transcript, video_id)
         result = future.result(timeout=timeout_seconds)
+        
+        #logging.info(f"Transcript: {result}")
         return result
     except FuturesTimeoutError:
         logging.error(f"Timeout while fetching transcript for video: {video_id}")
