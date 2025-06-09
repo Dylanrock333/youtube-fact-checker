@@ -1,8 +1,8 @@
-from youtube_transcript_api import YouTubeTranscriptApi
+#from youtube_transcript_api import YouTubeTranscriptApi
 from typing import Dict, Any, List, Optional
 import googleapiclient.discovery
 from app.config import get_settings
-from youtube_transcript_api.proxies import WebshareProxyConfig
+#from youtube_transcript_api.proxies import WebshareProxyConfig
 from dotenv import load_dotenv
 import os
 import logging
