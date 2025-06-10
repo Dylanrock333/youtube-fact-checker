@@ -17,6 +17,7 @@ import yt_dlp
 import tempfile
 import json
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+from urllib.parse import quote_plus
 
 load_dotenv()
 
@@ -71,10 +72,17 @@ executor = ThreadPoolExecutor(max_workers=4)  # Keep small for 0.5 CPU
 
 def _extract_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
     settings = get_settings()
+    # Add a log to be 100% sure the variables are loaded. DO NOT log the password.
+    logging.info(f"Attempting proxy connection with user: '{settings.webshare_username}' and host: '{settings.webshare_proxy_host}'")
+    
     url = f"https://www.youtube.com/watch?v={video_id}"
     
-    # Build proxy URL with authentication
-    proxy_url = f"http://{settings.webshare_username}:{settings.webshare_password}@{settings.webshare_proxy_host}:{settings.webshare_proxy_port}"
+    # URL-encode credentials to handle special characters safely
+    encoded_user = quote_plus(settings.webshare_username)
+    encoded_password = quote_plus(settings.webshare_password)
+
+    # Build proxy URL with the encoded credentials
+    proxy_url = f"http://{encoded_user}:{encoded_password}@{settings.webshare_proxy_host}:{settings.webshare_proxy_port}"
     
     with tempfile.TemporaryDirectory() as tmp_dir:
         ydl_opts = {
