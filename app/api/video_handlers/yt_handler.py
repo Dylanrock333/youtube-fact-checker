@@ -159,7 +159,7 @@ def _extract_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
         return formatted_transcript
 
 # Public facing function with safety
-def get_yt_transcript(video_id: str, timeout_seconds: int = 15) -> Optional[List[Dict[str, Any]]]:
+def get_yt_transcript(video_id: str, timeout_seconds: int = 20) -> Optional[List[Dict[str, Any]]]:
     try:
         future = executor.submit(_extract_transcript, video_id)
         result = future.result(timeout=timeout_seconds)
