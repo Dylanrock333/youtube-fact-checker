@@ -70,7 +70,12 @@ settings = get_settings()
 executor = ThreadPoolExecutor(max_workers=4)  # Keep small for 0.5 CPU
 
 def _extract_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
+    settings = get_settings()
     url = f"https://www.youtube.com/watch?v={video_id}"
+    
+    # Build proxy URL with authentication
+    proxy_url = f"http://{settings.webshare_username}:{settings.webshare_password}@{settings.webshare_proxy_host}:{settings.webshare_proxy_port}"
+    
     with tempfile.TemporaryDirectory() as tmp_dir:
         ydl_opts = {
             'writesubtitles': True,
@@ -80,7 +85,7 @@ def _extract_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
             'subtitleslangs': ['en'],
             'outtmpl': os.path.join(tmp_dir, '%(id)s.%(ext)s'),
             'quiet': True,
-            'cookies': '/app/cookies/cookies.txt', 
+            'proxy': proxy_url,
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

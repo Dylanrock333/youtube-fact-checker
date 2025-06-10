@@ -12,4 +12,4 @@ requests>=2.32.3
 slowapi>=0.1.9
 googletrans
 babel>=2.17.0
-yt-dlp>=2025.5.22
+yt-dlp>=22025.6.9
