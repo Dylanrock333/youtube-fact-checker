@@ -11,13 +11,15 @@ from app.api.video_handlers.translate import translate_full_prompt, get_language
 # Add Perplexity API URL
 PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 
-#GEMINI_MODEL = "gemini-2.5-flash-preview-05-20" # INPUT: $0.15 per 1M tokens, OUTPUT: $0.60 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
-GEMINI_MODEL = "gemini-2.0-flash-lite" # INPUT: $0.075 per 1M tokens, OUTPUT: $0.30 per 1M tokens (good results, cost efficient, low latency) (Need it to elaborate more for context and search query) 16 sec for 3hr 61 claims
+import logging
 
-#GEMINI_MODEL = "gemini-2.5-pro-preview-05-06" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Best results, super slow, expensive) 2min 6sec for 3hr 135 claims
+GEMINI_MODEL = "gemini-2.5-flash-preview-05-20" # INPUT: $0.15 per 1M tokens, OUTPUT: $0.60 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
+#GEMINI_MODEL = "gemini-2.0-flash-lite" # INPUT: $0.075 per 1M tokens, OUTPUT: $0.30 per 1M tokens (good results, cost efficient, low latency) (Need it to elaborate more for context and search query) 16 sec for 3hr 61 claims
+
+#GEMINI_MODEL = "gemini-2.5-pro-preview-06-05" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Best results, super slow, expensive) 2min 6sec for 3hr 135 claims
 #GEMINI_MODEL = "gemini-2.0-flash" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.40 per 1M tokens (multi-modal, good for images ect) 16 sec for 3hr 54 claims
 
-def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: str) -> List[Dict[str, Any]]:
+async def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: str) -> List[Dict[str, Any]]:
     """
     Extract controversial or potentially incorrect factual claims from transcript text.
     
@@ -98,15 +100,16 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: s
     {transcript_text}
     """
     
-    # Translate the ENTIRE prompt if needed
+    #logging.info(f"language: {language}")
+    
     if language != 'en':
-        final_prompt = translate_full_prompt(prompt, language)
+        final_prompt = await translate_full_prompt(prompt, language)
         language_instruction = get_language_instruction(language)
         final_prompt = f"{language_instruction}\n\n{final_prompt}"
     else:
         final_prompt = prompt
-    
-    #print(f"Final prompt: {final_prompt}")
+        
+    #logging.info(f"final_prompt: {final_prompt}")
 
     try:    
         # TODO: if there is an error retry the chunk
@@ -152,8 +155,8 @@ def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: s
 -Originality.AI
 -LongShot
 '''
-def execute_web_search(perplexity_api_key: str, claim_text: str = None, context: str = None, 
-                      video_data: dict = None, query: str = None):
+async def execute_web_search(perplexity_api_key: str, claim_text: str = None, context: str = None, 
+                      video_data: dict = None, query: str = None, language: str = None):
     """
     Execute a web search using the Perplexity API with enhanced context.
     
@@ -170,7 +173,7 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
     video_tags = video_data.get('tags', []) if video_data else []
     category = '' #TODO: Add category
     
-    prompt = f"""
+    user_prompt = f"""
         CLAIM:
         {claim_text}
         
@@ -199,17 +202,26 @@ def execute_web_search(perplexity_api_key: str, claim_text: str = None, context:
         
         No line divider between the sections please
     '''
+    
+    if language != 'en':
+        final_user_prompt = await translate_full_prompt(user_prompt, language)
+        final_system_prompt = await translate_full_prompt(system_prompt, language)
+        language_instruction = get_language_instruction(language)
+        final_system_prompt = f"{language_instruction}\n\n{final_system_prompt}"
+    else:
+        final_user_prompt = user_prompt
+        final_system_prompt = system_prompt
 
     payload = {
         "model": "sonar",
         "messages": [
             {
                 "role": "system",
-                "content": system_prompt
+                "content": final_system_prompt
             },
             {
                 "role": "user",
-                "content": prompt
+                "content": final_user_prompt
             }
         ],
         "max_tokens": 1500,

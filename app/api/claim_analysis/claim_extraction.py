@@ -7,30 +7,35 @@ import concurrent.futures
 import itertools
 import logging # Import the logging module
 from fastapi import HTTPException
+import asyncio # Add asyncio import
+import time
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Helper function to process a single chunk
-def _process_chunk(chunk_data: tuple, language: str) -> List[Dict[str, Any]]:
+def _process_chunk(chunk_data: tuple) -> List[Dict[str, Any]]: # Make sync function
     """Formats a chunk and extracts claims. Expects a tuple: (index, chunk, api_key, video_data)."""
-    logging.info(f"Processing chunk in {language} language")
-    index, chunk, video_data = chunk_data 
+    index, chunk, video_data, language = chunk_data 
     logging.info(f"Starting processing for chunk {index + 1}...") # Log start
+    start_time = time.time()
     
     formatted_chunk = format_transcript_for_analysis(chunk)
-    claims, input_tokens, output_tokens = extract_claims(formatted_chunk, video_data, language)
+    # Handle async extract_claims within sync function
+    claims, input_tokens, output_tokens = asyncio.run(extract_claims(formatted_chunk, video_data, language))
     
-    logging.info(f"Finished processing for chunk {index + 1}. Found {len(claims)} claims.") # Log finish
+    processing_time_seconds = round(time.time() - start_time, 2)
+    logging.info(f"Finished processing for chunk {index + 1} in {processing_time_seconds}s. Found {len(claims)} claims.") 
     return claims, input_tokens, output_tokens
 
-def process_video_claims(video_id: str, origin: str, language: str) -> tuple[List[Dict[str, Any]], str]:
+async def process_video_claims(video_id: str, origin: str, language: str) -> tuple[List[Dict[str, Any]], str]: # Keep async
     """Process a YouTube video and extract controversial or questionable factual claims."""
     
     #TODO: Have standard way of getting transcript
     if origin == "youtube":
         transcript = get_yt_transcript(video_id)
-        video_data = get_yt_video_info(video_id)
+        video_data = await get_yt_video_info(video_id, language)
+        #logging.info(f"video_data: {video_data}")
     else:
         raise ValueError(f"Unsupported origin: {origin}")
     
@@ -44,24 +49,21 @@ def process_video_claims(video_id: str, origin: str, language: str) -> tuple[Lis
     all_claims_from_chunks = []
     total_input_tokens = 0 # Initialize input token counter
     total_output_tokens = 0 # Initialize output token counter
+    
+    # Use ThreadPoolExecutor for parallel processing
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        chunk_indices = range(len(transcript_chunks))
-        video_data_list = itertools.repeat(video_data, len(transcript_chunks))
+        # Prepare chunk data for processing
+        chunk_data_list = [(i, chunk, video_data, language) for i, chunk in enumerate(transcript_chunks)]
         
-        # Combine arguments into tuples for each chunk: (index, chunk, api_key, video_data)
-        map_args = zip(chunk_indices, transcript_chunks, video_data_list)
+        # Submit all tasks to the thread pool
+        futures = [executor.submit(_process_chunk, chunk_data) for chunk_data in chunk_data_list]
         
-        #print(map_args)
-        
-        # map executes _process_chunk for each item in map_args concurrently
-        results = executor.map(_process_chunk, map_args, language)
-
-        for chunk_result in results:
-            chunk_claims, input_tokens, output_tokens = chunk_result # Unpack the result
+        # Get results as they complete
+        for future in concurrent.futures.as_completed(futures):
+            chunk_claims, input_tokens, output_tokens = future.result()
             all_claims_from_chunks.extend(chunk_claims) # Use extend for claims list
             total_input_tokens += input_tokens # Accumulate input tokens
             total_output_tokens += output_tokens # Accumulate output tokens
-
 
     # Flatten the list of claims (already done by extend)
     # all_claims = [claim for sublist in all_claims_from_chunks for claim in sublist] # No longer needed if using extend
