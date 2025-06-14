@@ -1,8 +1,8 @@
-#from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api import YouTubeTranscriptApi
 from typing import Dict, Any, List, Optional
 import googleapiclient.discovery
 from app.config import get_settings
-#from youtube_transcript_api.proxies import WebshareProxyConfig
+from youtube_transcript_api.proxies import WebshareProxyConfig
 from dotenv import load_dotenv
 import os
 import logging
@@ -22,7 +22,7 @@ from urllib.parse import quote_plus
 load_dotenv()
 
 # Configuration
-MAX_RETRIES = 20
+MAX_RETRIES_YT_TRANSCRIPT_API = 4
 
 #transcript handling
 MAX_DURATION = 13.0  # max combined duration in seconds
@@ -30,47 +30,48 @@ MAX_CHARS = 750     # optional limit for character count
 
                 
 settings = get_settings()
-# # Initialize ytt_api inside the function using settings
-# ytt_api = YouTubeTranscriptApi(
-#     proxy_config=WebshareProxyConfig(
-#         proxy_username=settings.webshare_username,
-#         proxy_password=settings.webshare_password,
-#     )
-# )
 
-# def get_yt_transcript(video_id: str) -> List[Dict[str, Any]]: # Updated return type hint
-#     """Retrieve transcript with timestamps and title from a YouTube video."""
+# Initialize ytt_api inside the function using settings
+ytt_api = YouTubeTranscriptApi(
+    proxy_config=WebshareProxyConfig(
+        proxy_username=settings.webshare_username,
+        proxy_password=settings.webshare_password,
+    )
+)
+
+def extract_transcript_YouTubeTranscriptApi(video_id: str) -> List[Dict[str, Any]]: # Updated return type hint
+    """Retrieve transcript with timestamps and title from a YouTube video."""
     
-#     for attempt in range(MAX_RETRIES):
-#         try:
-#             logging.info(f"getting transcript for video id: {video_id} (attempt {attempt + 1}/{MAX_RETRIES})")
+    for attempt in range(MAX_RETRIES_YT_TRANSCRIPT_API):
+        try:
+            logging.info(f"Attempting to retrieve a transcript for video id: {video_id} (attempt {attempt + 1}/{MAX_RETRIES_YT_TRANSCRIPT_API})")
             
-#             raw_transcript = ytt_api.fetch(video_id)
-#             formatted_transcript = raw_transcript.to_raw_data()
+            raw_transcript = ytt_api.fetch(video_id)
+            formatted_transcript = raw_transcript.to_raw_data()
 
-#             #TODO: Have a standart transcript format schema that is used for all video origins
-#             logging.info(f"Successfully retrieved transcript for video id: {video_id}")
-#             logging.info(f"formatted_transcript: {formatted_transcript}")
-#             return formatted_transcript
+            #TODO: Have a standart transcript format schema that is used for all video origins
+            logging.info(f"Successfully retrieved transcript for video id: {video_id}")
+            #logging.info(f"formatted_transcript: {formatted_transcript}")
+            return formatted_transcript
             
-#         except Exception as e:
-#             logging.warning(f"Attempt {attempt + 1}/{MAX_RETRIES} failed for video id {video_id}: {e}")
+        except Exception as e:
+            logging.warning(f"Attempt {attempt + 1}/{MAX_RETRIES_YT_TRANSCRIPT_API} failed for video id {video_id}: {e}")
             
-#             # If this was the last attempt, log error and return None
-#             if attempt == MAX_RETRIES - 1:
-#                 logging.error(f"All {MAX_RETRIES} attempts failed for video id {video_id}. Final error: {e}")
-#                 return None
+            # If this was the last attempt, log error and return None
+            if attempt == MAX_RETRIES_YT_TRANSCRIPT_API - 1:
+                logging.error(f"All {MAX_RETRIES_YT_TRANSCRIPT_API} attempts failed for video id {video_id}. Final error: {e}")
+                return None
             
-#             # Wait a bit before retrying (exponential backoff)
-#             wait_time = 2
-#             logging.info(f"Waiting {wait_time} seconds before retry...")
-#             time.sleep(wait_time)
+            # Wait a bit before retrying 
+            wait_time = 2
+            logging.info(f"Waiting {wait_time} seconds before retry...")
+            time.sleep(wait_time)
 
 
 # You can reuse this executor app-wide (best placed globally)
 executor = ThreadPoolExecutor(max_workers=4)  # Keep small for 0.5 CPU
 
-def _extract_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
+def _extract_transcript_yt_dlp(video_id: str) -> Optional[List[Dict[str, Any]]]:
     settings = get_settings()
     url = f"https://www.youtube.com/watch?v={video_id}"
 
@@ -163,11 +164,24 @@ def _extract_transcript(video_id: str) -> Optional[List[Dict[str, Any]]]:
 # Public facing function with safety
 def get_yt_transcript(video_id: str, timeout_seconds: int = 20) -> Optional[List[Dict[str, Any]]]:
     try:
-        future = executor.submit(_extract_transcript, video_id)
-        result = future.result(timeout=timeout_seconds)
+        
+        youtube_transcript = extract_transcript_YouTubeTranscriptApi(video_id)
+        if youtube_transcript:
+            return youtube_transcript
+        else:
+            logging.warning(f"YouTubeTranscriptApi failed for video: {video_id}")
+            logging.info(f"Attempting to extract transcript with yt-dlp for video: {video_id}")
+            future = executor.submit(_extract_transcript_yt_dlp, video_id)
+            result = future.result(timeout=timeout_seconds)
+            if result:
+                return result
+            else:
+                logging.error(f"yt-dlp failed to extract transcript for video: {video_id}")
+                return None
+            
         
         #logging.info(f"Transcript: {result}")
-        return result
+        #return result
     except FuturesTimeoutError:
         logging.error(f"Timeout while fetching transcript for video: {video_id}")
         return None
