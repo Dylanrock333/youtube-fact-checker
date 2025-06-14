@@ -1,4 +1,4 @@
-from ..video_handlers.yt_handler import get_yt_transcript, get_yt_video_info
+from ..video_handlers.yt_handler import get_yt_transcript, get_yt_video_info, timestamp_format
 from .formatting import format_transcript_for_analysis
 from ..agent import extract_claims
 from ..transcript_chunking.chunking import chunk_transcript
@@ -24,9 +24,13 @@ def _process_chunk(chunk_data: tuple) -> List[Dict[str, Any]]: # Make sync funct
     # Handle async extract_claims within sync function
     claims, input_tokens, output_tokens = asyncio.run(extract_claims(formatted_chunk, video_data, language))
     
+    #format timestamps for consistency
+    for claim in claims:
+        claim['timestamp'] = timestamp_format(claim['timestamp'])
+    
     processing_time_seconds = round(time.time() - start_time, 2)
     logging.info(f"Finished processing for chunk {index + 1} in {processing_time_seconds}s. Found {len(claims)} claims.") 
-    return claims, input_tokens, output_tokens
+    return claims, input_tokens, output_tokens, (index+1)
 
 async def process_video_claims(video_id: str, origin: str, language: str) -> tuple[List[Dict[str, Any]], str]: # Keep async
     """Process a YouTube video and extract controversial or questionable factual claims."""
@@ -55,15 +59,14 @@ async def process_video_claims(video_id: str, origin: str, language: str) -> tup
         # Prepare chunk data for processing
         chunk_data_list = [(i, chunk, video_data, language) for i, chunk in enumerate(transcript_chunks)]
         
-        # Submit all tasks to the thread pool
-        futures = [executor.submit(_process_chunk, chunk_data) for chunk_data in chunk_data_list]
+        # Use executor.map to process chunks in parallel and preserve order
+        results = executor.map(_process_chunk, chunk_data_list)
         
-        # Get results as they complete
-        for future in concurrent.futures.as_completed(futures):
-            chunk_claims, input_tokens, output_tokens = future.result()
-            all_claims_from_chunks.extend(chunk_claims) # Use extend for claims list
-            total_input_tokens += input_tokens # Accumulate input tokens
-            total_output_tokens += output_tokens # Accumulate output tokens
+        # Unpack results and aggregate
+        for chunk_claims, input_tokens, output_tokens, chunk_index in results:
+            all_claims_from_chunks.extend(chunk_claims)
+            total_input_tokens += input_tokens
+            total_output_tokens += output_tokens
 
     # Flatten the list of claims (already done by extend)
     # all_claims = [claim for sublist in all_claims_from_chunks for claim in sublist] # No longer needed if using extend
@@ -75,4 +78,4 @@ async def process_video_claims(video_id: str, origin: str, language: str) -> tup
     # Log total token counts
     logging.info(f"Total input tokens used for video_id {video_id}: {total_input_tokens}")
     logging.info(f"Total output tokens generated for video_id {video_id}: {total_output_tokens}")
-    return all_claims_from_chunks, video_data, total_input_tokens, total_output_tokens
+    return all_claims_from_chunks, video_data, total_input_tokens, total_output_tokens, language

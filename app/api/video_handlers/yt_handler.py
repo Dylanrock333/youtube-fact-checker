@@ -44,7 +44,7 @@ def extract_transcript_YouTubeTranscriptApi(video_id: str) -> List[Dict[str, Any
     
     for attempt in range(MAX_RETRIES_YT_TRANSCRIPT_API):
         try:
-            logging.info(f"Attempting to retrieve a transcript for video id: {video_id} (attempt {attempt + 1}/{MAX_RETRIES_YT_TRANSCRIPT_API})")
+            logging.info(f"Attempting to retrieve a transcript for video id: {video_id} on YouTubeTranscriptApi (attempt {attempt + 1}/{MAX_RETRIES_YT_TRANSCRIPT_API})")
             
             raw_transcript = ytt_api.fetch(video_id)
             formatted_transcript = raw_transcript.to_raw_data()
@@ -72,6 +72,8 @@ def extract_transcript_YouTubeTranscriptApi(video_id: str) -> List[Dict[str, Any
 executor = ThreadPoolExecutor(max_workers=4)  # Keep small for 0.5 CPU
 
 def _extract_transcript_yt_dlp(video_id: str) -> Optional[List[Dict[str, Any]]]:
+    """Extract transcript with timestamps and title from a YouTube video using yt-dlp."""
+    logging.info(f"Attempting to extract transcript for video id: {video_id} on yt-dlp")
     settings = get_settings()
     url = f"https://www.youtube.com/watch?v={video_id}"
 
@@ -320,4 +322,37 @@ def format_duration(iso_duration: str) -> str:
             return f"{minutes}:{seconds:02d}"
     except:
         return iso_duration
-   
+    
+def timestamp_format(timestamp: str) -> str:
+    """
+    Formats timestamps for consistency.
+
+    - Converts HH:MM:SS to MM:SS if the hour is 00.
+    - Converts MM:SS to H:MM:SS if minutes are 60 or more.
+    - Handles various timestamp formats from video transcripts.
+    """
+    parts = str(timestamp).split(':')
+
+    if len(parts) == 3:
+        # Format HH:MM:SS
+        if parts[0] == '00':
+            return f"{parts[1]}:{parts[2]}"
+        else:
+            return str(timestamp)
+
+    elif len(parts) == 2:
+        # Format MM:SS
+        try:
+            minutes = int(parts[0])
+            seconds = parts[1]
+            if minutes >= 60:
+                hours = minutes // 60
+                remaining_minutes = minutes % 60
+                return f"{hours}:{remaining_minutes:02d}:{seconds}"
+            else:
+                return str(timestamp)
+        except ValueError:
+            # Handle cases where conversion to int fails
+            return str(timestamp)
+
+    return str(timestamp)
