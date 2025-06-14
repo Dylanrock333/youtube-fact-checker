@@ -204,6 +204,7 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
     '''
     
     if language != 'en':
+        logging.info(f"Translating user prompt to {language}")
         final_user_prompt = await translate_full_prompt(user_prompt, language)
         final_system_prompt = await translate_full_prompt(system_prompt, language)
         language_instruction = get_language_instruction(language)

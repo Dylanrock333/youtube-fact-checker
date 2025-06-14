@@ -21,24 +21,9 @@ class URLTruncatingFormatter(logging.Formatter):
         formatted = super().format(record)
         
         # Check if it's a long HTTP request log and truncate if needed
-        if len(formatted) > 150 and any(pattern in formatted for pattern in [
-            'HTTP Request:', 'https://translate.googleapis.com', 'https://generativelanguage.googleapis.com'
-        ]):
-            # Find the URL portion and truncate it
-            if 'HTTP Request:' in formatted:
-                # Split on HTTP Request: and truncate the URL part
-                parts = formatted.split('HTTP Request: ')
-                if len(parts) > 1:
-                    prefix = parts[0] + 'HTTP Request: '
-                    url_part = parts[1]
-                    # Extract method and base URL
-                    url_words = url_part.split()
-                    if len(url_words) >= 2:
-                        method_and_base = url_words[0] + ' ' + url_words[1].split('?')[0]
-                        return prefix + method_and_base + '... [URL truncated for readability]'
-            elif 'translate.googleapis.com' in formatted:
-                # Handle direct Google Translate URLs
-                return formatted.split('?')[0] + '... [URL truncated for readability]'
+        if len(formatted) > 150 and 'https://translate.googleapis.com' in formatted:
+            # Handle Google Translate URLs
+            return formatted.split('?')[0] + '... [URL truncated for readability]'
         
         return formatted
 

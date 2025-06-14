@@ -39,7 +39,7 @@ async def execute(
 
     try:
         # Await the async process_video_claims function
-        claims, video_data_from_processing, input_tokens, output_tokens = await process_video_claims(payload.videoID, payload.origin, payload.selectedLanguage)
+        claims, video_data_from_processing, input_tokens, output_tokens, language = await process_video_claims(payload.videoID, payload.origin, payload.selectedLanguage)
         
         # Calculate processing time
         processing_time_seconds = round(time.time() - start_time, 2)
