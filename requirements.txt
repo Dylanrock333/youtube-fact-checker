@@ -13,3 +13,4 @@ slowapi>=0.1.9
 googletrans
 babel>=2.17.0
 yt-dlp>=2025.6.9
+google-generativeai>=0.8.5

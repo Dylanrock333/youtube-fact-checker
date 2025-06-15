@@ -1,9 +1,9 @@
 import anthropic
 import json
 from typing import List, Dict, Any
-import requests
+import httpx
 from app.config import get_settings
-from google import genai
+import google.generativeai as genai
 import nltk
 from app.schemas import ClaimResponse
 from datetime import datetime
@@ -19,7 +19,7 @@ GEMINI_MODEL = "gemini-2.5-flash-preview-05-20" # INPUT: $0.15 per 1M tokens, OU
 #GEMINI_MODEL = "gemini-2.5-pro-preview-06-05" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Best results, super slow, expensive) 2min 6sec for 3hr 135 claims
 #GEMINI_MODEL = "gemini-2.0-flash" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.40 per 1M tokens (multi-modal, good for images ect) 16 sec for 3hr 54 claims
 
-async def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: str) -> List[Dict[str, Any]]:
+async def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: str) -> tuple[List[Dict[str, Any]], int, int]:
     """
     Extract controversial or potentially incorrect factual claims from transcript text.
     
@@ -31,8 +31,9 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     - internet_searchability: How easily the claim can be verified online (1-5)
     - context: Surrounding text for context
     """
-    client = genai.Client(api_key=get_settings().google_gemini_api_key)
-        #TODO: Fix time stamp
+    genai.configure(api_key=get_settings().google_gemini_api_key)
+    model = genai.GenerativeModel(GEMINI_MODEL)
+
     prompt = f"""
     You are an expert fact-checker analyzing a video transcript.
     Identify selective statements presented as facts that warrant verification, potentially misleading, factually questionable or contreversial and provide a detailed analysis of the claim.
@@ -80,7 +81,7 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
             - Requests identification of any nuance, complexity, or qualifications missing from the original claim
         
     Format your response as a JSON array of objects with these fields:
-    - title: A short and simple title that summarizes the claim stated as a question (less than 1 s)
+    - title: A short and simple title that summarizes the claim stated as a question (less than 10 words)
     - claim: The factual statement quoted from the transcript only 
     - context: a summary of the context for the claim that explains the claim and the context leading up to it (3-5 sentences)
     - timestamp: The timestamp from the transcript (HH:MM:SS)
@@ -100,8 +101,6 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     {transcript_text}
     """
     
-    #logging.info(f"language: {language}")
-    
     if language != 'en':
         final_prompt = await translate_full_prompt(prompt, language)
         language_instruction = get_language_instruction(language)
@@ -109,41 +108,33 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     else:
         final_prompt = prompt
         
-    #logging.info(f"final_prompt: {final_prompt}")
-
     try:    
-        # TODO: if there is an error retry the chunk
-        
         input_tokens = len(nltk.word_tokenize(prompt))
         
-        response = client.models.generate_content(
-            model=GEMINI_MODEL, 
+        # Use await with the async generate_content_async method
+        response = await model.generate_content_async(
             contents=final_prompt,
-            config={
+            generation_config={
                 'response_mime_type': 'application/json',
                 'response_schema': list[ClaimResponse],
             },
         )
         
-        
         response_text = response.text
-        #print(response_text)
         output_tokens = len(nltk.word_tokenize(response_text))        
 
         claims = json.loads(response_text)
         
         return claims, input_tokens, output_tokens
     except (AttributeError, IndexError, json.JSONDecodeError, Exception) as e:
-        # Handle potential errors if the response structure is unexpected or JSON is invalid
         print(f"Error processing response: {e}")
-        # Attempt to log the problematic text if possible
         try:
             problematic_text = response.candidates[0].content.parts[0].text
             print(f"Problematic text: {problematic_text}")
         except Exception as log_e:
             print(f"Could not extract problematic text: {log_e}")
-            print(f"Full response object: {response}")
-        # Return default values matching the expected tuple structure
+            if 'response' in locals():
+                 print(f"Full response object: {response}")
         return [], 0, 0
     
 #TODO: Deep search find a better model that has citations, good summary, and cheaper
@@ -214,7 +205,7 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
         final_system_prompt = system_prompt
 
     payload = {
-        "model": "sonar",
+        "model": "sonar-small-online",
         "messages": [
             {
                 "role": "system",
@@ -234,11 +225,12 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
         "Authorization": f"Bearer {perplexity_api_key}",
         "Content-Type": "application/json"
     }
-
-    response = requests.request("POST", url=PERPLEXITY_API_URL, json=payload, headers=headers)
-     
-    #print(response.json())
     
+    # Use an async HTTP client
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url=PERPLEXITY_API_URL, json=payload, headers=headers, timeout=30.0)
+    
+    response.raise_for_status()  # Raise an exception for bad status codes
     return response.json()
 
 #TODO:SPEECH TO TEXT

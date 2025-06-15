@@ -1,6 +1,13 @@
 import os
 from fastapi import FastAPI, Request
 import uvicorn
+import sys
+import asyncio
+
+# # Platform-specific asyncio policy for Windows to avoid gRPC/HTTPX errors
+# if sys.platform == "win32":
+#     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 from app.api.endpoints import router
 from fastapi.middleware.cors import CORSMiddleware
 import nltk

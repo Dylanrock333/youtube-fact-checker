@@ -4,32 +4,12 @@ from ..agent import extract_claims
 from ..transcript_chunking.chunking import chunk_transcript
 from typing import List, Dict, Any, AsyncGenerator
 import asyncio
-import concurrent.futures
 import logging
 from fastapi import HTTPException
 import time
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Helper function to process a single chunk synchronously for ThreadPoolExecutor
-def _process_chunk_sync(chunk_data: tuple) -> tuple[List[Dict[str, Any]], int, int, int]:
-    """Formats a chunk and extracts claims synchronously for use with ThreadPoolExecutor."""
-    index, chunk, video_data, language = chunk_data
-    logging.info(f"Starting processing for chunk {index + 1}...")
-    start_time = time.time()
-
-    formatted_chunk = format_transcript_for_analysis(chunk)
-    # Run the async extract_claims function in a new event loop
-    claims, input_tokens, output_tokens = asyncio.run(extract_claims(formatted_chunk, video_data, language))
-
-    # Format timestamps for consistency
-    for claim in claims:
-        claim['timestamp'] = timestamp_format(claim['timestamp'])
-
-    processing_time_seconds = round(time.time() - start_time, 2)
-    logging.info(f"Finished processing for chunk {index + 1} in {processing_time_seconds}s. Found {len(claims)} claims.")
-    return claims, input_tokens, output_tokens, (index + 1)
 
 async def process_video_claims_stream(video_id: str, origin: str, language: str) -> AsyncGenerator[Dict[str, Any], None]:
     """
@@ -51,6 +31,7 @@ async def process_video_claims_stream(video_id: str, origin: str, language: str)
             "status": "progress", 
             "percentage": 10
         }
+        
     else:
         raise ValueError(f"Unsupported origin: {origin}")
 
@@ -76,35 +57,49 @@ async def process_video_claims_stream(video_id: str, origin: str, language: str)
     total_input_tokens = 0
     total_output_tokens = 0
     
-    # Use ThreadPoolExecutor for better performance
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Prepare chunk data for processing
-        chunk_data_list = [(i, chunk, video_data, language) for i, chunk in enumerate(transcript_chunks)]
+    async def _process_chunk(index: int, chunk: List[Dict[str, Any]]):
+        """Processes a single chunk asynchronously."""
+        logging.info(f"Starting processing for chunk {index + 1}...")
+        start_time = time.time()
+
+        formatted_chunk = format_transcript_for_analysis(chunk)
+        # Directly await the async extract_claims function
+        claims, input_tokens, output_tokens = await extract_claims(formatted_chunk, video_data, language)
+
+        #TODO: Fix timestamp formatting
+        # Format timestamps for consistency
+        for claim in claims:
+            if 'timestamp' in claim and claim['timestamp']:
+                claim['timestamp'] = timestamp_format(claim['timestamp'])
+            else:
+                logging.warning(f"Claim missing timestamp: {claim.get('claim', 'Unknown claim')[:50]}...")
+                #logging.info(f"claim: {claim}")
+                claim['timestamp'] = "00:00"  # Default timestamp
+            #logging.info(f"claim: {claim}")
+
+        processing_time_seconds = round(time.time() - start_time, 2)
+        logging.info(f"Finished processing for chunk {index + 1} in {processing_time_seconds}s. Found {len(claims)} claims.")
+        return claims, input_tokens, output_tokens, (index + 1)
+
+    # Create and run tasks concurrently using asyncio
+    tasks = [_process_chunk(i, chunk) for i, chunk in enumerate(transcript_chunks)]
+    
+    chunks_processed = 0
+    for future in asyncio.as_completed(tasks):
+        chunk_claims, input_tokens, output_tokens, chunk_index = await future
+        all_claims_from_chunks.append((chunk_index, chunk_claims))
+        total_input_tokens += input_tokens
+        total_output_tokens += output_tokens
+        chunks_processed += 1
         
-        # Submit all tasks to the executor
-        future_to_index = {
-            executor.submit(_process_chunk_sync, chunk_data): i 
-            for i, chunk_data in enumerate(chunk_data_list)
+        # Calculate percentage from 20% to 100% based on chunk progress
+        chunk_progress = (chunks_processed / num_chunks) * 75
+        percentage = round(25 + chunk_progress)
+        
+        yield {
+            "status": "progress",
+            "percentage": percentage
         }
-        
-        chunks_processed = 0
-        # Process completed futures as they finish
-        for future in concurrent.futures.as_completed(future_to_index):
-            chunk_claims, input_tokens, output_tokens, chunk_index = future.result()
-            all_claims_from_chunks.append((chunk_index, chunk_claims))
-            total_input_tokens += input_tokens
-            total_output_tokens += output_tokens
-            chunks_processed += 1
-            
-            # Calculate percentage from 20% to 100% based on chunk progress
-            # 20% is the starting point, 80% is the remaining range for chunks
-            chunk_progress = (chunks_processed / num_chunks) * 75  # 80% range for chunks
-            percentage = round(25 + chunk_progress)  # Start from 25% + chunk progress
-            
-            yield {
-                "status": "progress",
-                "percentage": percentage
-            }
 
     all_claims_from_chunks.sort(key=lambda x: x[0])
     final_claims = [claim for _, sublist in all_claims_from_chunks for claim in sublist]
