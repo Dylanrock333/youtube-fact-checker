@@ -9,9 +9,7 @@ import logging
 from app.utility import limiter, limitter_logger
 import time
 
-
 router = APIRouter()
-
 
 # Health check endpoint
 @router.get("/health", tags=["Health"])
@@ -22,71 +20,6 @@ async def health_check():
 # Add this function to get the analytics DB from app state
 def get_analytics_db(request: Request):
     return request.app.state.analytics_db
-
-# Execute endpoint
-@router.post("/execute", tags=["Processing"])
-@limiter.limit("25/hour")
-async def execute(
-    payload: VideoExecutionRequest, 
-    request: Request,
-    analytics_db = Depends(get_analytics_db)
-):
-    """
-    Process a video and extract controversial claims.
-    """
-    
-    limitter_logger(request, "execute")
-    start_time = time.time()
-    video_data_from_processing = {} # Initialize to ensure it's always defined for logging
-
-    try:
-        # Await the async process_video_claims function
-        claims, video_data_from_processing, input_tokens, output_tokens, language = await process_video_claims(payload.videoID, payload.origin, payload.selectedLanguage)
-        
-        # Calculate processing time
-        processing_time_seconds = round(time.time() - start_time, 2)
-        processing_time_ms = int(processing_time_seconds * 1000)  # Keep ms for analytics DB
-        
-        
-        # Log successful request
-        analytics_db.log_video_processing(
-            video_id=payload.videoID,
-            origin=payload.origin,
-            video_title=video_data_from_processing.get("title", "Unknown Title"), 
-            status="success",
-            claim_count=len(claims),
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            processing_time_ms=processing_time_ms
-        )
-        
-        # Log endpoint processing time
-        logging.info(f"Execute endpoint for video {payload.videoID} completed in {processing_time_seconds}s")
-        
-        return {
-            "claims": claims, 
-            "video_data": video_data_from_processing, 
-            "videoID": payload.videoID, 
-            "claim_count": len(claims)
-        }
-    except Exception as e:
-        # Calculate processing time even for errors
-        processing_time_seconds = round(time.time() - start_time, 2)
-        processing_time_ms = int(processing_time_seconds * 1000)  # Keep ms for analytics DB
-        
-        # Log failed request
-        analytics_db.log_video_processing(
-            video_id=payload.videoID,
-            origin=payload.origin,
-            video_title=video_data_from_processing.get("title", "Unknown Title (Error)"), 
-            status="error",
-            processing_time_ms=processing_time_ms,
-            error_message=str(e)
-        )
-        
-        logging.error(f"Execute endpoint for video {payload.videoID} failed after {processing_time_seconds}s: {e}")
-        raise HTTPException(status_code=500, detail="Error processing video")
-
 
 # SSE endpoint for real-time progress
 @router.post("/execute/stream", tags=["Processing"])
@@ -211,3 +144,66 @@ async def get_recent_analytics(
     return analytics_db.get_recent_videos(limit)
 
 
+# Execute endpoint
+# @router.post("/execute", tags=["Processing"])
+# @limiter.limit("25/hour")
+# async def execute(
+#     payload: VideoExecutionRequest, 
+#     request: Request,
+#     analytics_db = Depends(get_analytics_db)
+# ):
+#     """
+#     Process a video and extract controversial claims.
+#     """
+    
+#     limitter_logger(request, "execute")
+#     start_time = time.time()
+#     video_data_from_processing = {} # Initialize to ensure it's always defined for logging
+
+#     try:
+#         # Await the async process_video_claims function
+#         claims, video_data_from_processing, input_tokens, output_tokens, language = await process_video_claims(payload.videoID, payload.origin, payload.selectedLanguage)
+        
+#         # Calculate processing time
+#         processing_time_seconds = round(time.time() - start_time, 2)
+#         processing_time_ms = int(processing_time_seconds * 1000)  # Keep ms for analytics DB
+        
+        
+#         # Log successful request
+#         analytics_db.log_video_processing(
+#             video_id=payload.videoID,
+#             origin=payload.origin,
+#             video_title=video_data_from_processing.get("title", "Unknown Title"), 
+#             status="success",
+#             claim_count=len(claims),
+#             input_tokens=input_tokens,
+#             output_tokens=output_tokens,
+#             processing_time_ms=processing_time_ms
+#         )
+        
+#         # Log endpoint processing time
+#         logging.info(f"Execute endpoint for video {payload.videoID} completed in {processing_time_seconds}s")
+        
+#         return {
+#             "claims": claims, 
+#             "video_data": video_data_from_processing, 
+#             "videoID": payload.videoID, 
+#             "claim_count": len(claims)
+#         }
+#     except Exception as e:
+#         # Calculate processing time even for errors
+#         processing_time_seconds = round(time.time() - start_time, 2)
+#         processing_time_ms = int(processing_time_seconds * 1000)  # Keep ms for analytics DB
+        
+#         # Log failed request
+#         analytics_db.log_video_processing(
+#             video_id=payload.videoID,
+#             origin=payload.origin,
+#             video_title=video_data_from_processing.get("title", "Unknown Title (Error)"), 
+#             status="error",
+#             processing_time_ms=processing_time_ms,
+#             error_message=str(e)
+#         )
+        
+#         logging.error(f"Execute endpoint for video {payload.videoID} failed after {processing_time_seconds}s: {e}")
+#         raise HTTPException(status_code=500, detail="Error processing video")

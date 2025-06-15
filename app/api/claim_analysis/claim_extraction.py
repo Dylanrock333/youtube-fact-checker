@@ -51,7 +51,6 @@ async def process_video_claims_stream(video_id: str, origin: str, language: str)
             "status": "progress", 
             "percentage": 10
         }
-        
     else:
         raise ValueError(f"Unsupported origin: {origin}")
 
