@@ -3,7 +3,8 @@ import json
 from typing import List, Dict, Any
 import httpx
 from app.config import get_settings
-import google.generativeai as genai
+#import google.generativeai as genai
+from google import genai
 import nltk
 from app.schemas import ClaimResponse
 from datetime import datetime
@@ -12,8 +13,17 @@ from app.api.video_handlers.translate import translate_full_prompt, get_language
 PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 
 import logging
+import asyncio
 
-GEMINI_MODEL = "gemini-2.5-flash-preview-05-20" # INPUT: $0.15 per 1M tokens, OUTPUT: $0.60 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
+settings = get_settings()
+
+# Create a single, reusable client instance. This is more efficient and thread-safe.
+gemini_client = genai.Client(api_key=settings.google_gemini_api_key)
+
+GEMINI_MODEL = "gemini-1.5-flash-latest" # INPUT: $0.35 per 1M tokens, OUTPUT: $0.70 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
+#GEMINI_MODEL = "gemini-1.5-pro-latest" # INPUT: $3.50 per 1M tokens, OUTPUT: $10.50 per 1M tokens (Best results, super slow, expensive) 2min 6sec for 3hr 135 claims
+
+#GEMINI_MODEL = "gemini-2.5-flash-preview-05-20" # INPUT: $0.15 per 1M tokens, OUTPUT: $0.60 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
 #GEMINI_MODEL = "gemini-2.0-flash-lite" # INPUT: $0.075 per 1M tokens, OUTPUT: $0.30 per 1M tokens (good results, cost efficient, low latency) (Need it to elaborate more for context and search query) 16 sec for 3hr 61 claims
 
 #GEMINI_MODEL = "gemini-2.5-pro-preview-06-05" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Best results, super slow, expensive) 2min 6sec for 3hr 135 claims
@@ -31,9 +41,20 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     - internet_searchability: How easily the claim can be verified online (1-5)
     - context: Surrounding text for context
     """
-    genai.configure(api_key=get_settings().google_gemini_api_key)
-    model = genai.GenerativeModel(GEMINI_MODEL)
+    # genai.configure(api_key=get_settings().google_gemini_api_key)
+    # model = genai.GenerativeModel(GEMINI_MODEL)
 
+    def _sync_generate_content(final_prompt):
+        """Synchronous wrapper for Gemini API call that reuses the global client."""
+        return gemini_client.models.generate_content(
+            model=GEMINI_MODEL, 
+            contents=final_prompt,
+            config={
+                'response_mime_type': 'application/json',
+                'response_schema': list[ClaimResponse],
+            },
+        )
+        
     prompt = f"""
     You are an expert fact-checker analyzing a video transcript.
     Identify selective statements presented as facts that warrant verification, potentially misleading, factually questionable or contreversial and provide a detailed analysis of the claim.
@@ -111,15 +132,10 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     try:    
         input_tokens = len(nltk.word_tokenize(prompt))
         
-        # Use await with the async generate_content_async method
-        response = await model.generate_content_async(
-            contents=final_prompt,
-            generation_config={
-                'response_mime_type': 'application/json',
-                'response_schema': list[ClaimResponse],
-            },
-        )
-        
+        # Use asyncio.to_thread to run the synchronous API call concurrently
+        response = await asyncio.to_thread(_sync_generate_content, final_prompt)
+
+    
         response_text = response.text
         output_tokens = len(nltk.word_tokenize(response_text))        
 
@@ -203,9 +219,9 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
     else:
         final_user_prompt = user_prompt
         final_system_prompt = system_prompt
-
+        
     payload = {
-        "model": "sonar-small-online",
+        "model": "sonar",
         "messages": [
             {
                 "role": "system",
