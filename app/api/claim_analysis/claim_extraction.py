@@ -35,6 +35,14 @@ async def process_video_claims_stream(video_id: str, origin: str, language: str)
     else:
         raise ValueError(f"Unsupported origin: {origin}")
 
+    if isinstance(transcript, dict) and transcript.get("code") == 403:
+        logging.error(f"Video is private: {video_id}")
+        yield {
+            "status": "error",
+            "message": "The video is private and cannot be processed."
+        }
+        return
+    
     if not video_data or not transcript:
         logging.warning(f"No video data or transcript found for video_id: {video_id}")
         raise HTTPException(status_code=404, detail=f"Failed to retrieve video data or transcript for video ID: {video_id}")

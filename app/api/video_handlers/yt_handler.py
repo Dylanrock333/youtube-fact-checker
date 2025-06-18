@@ -57,6 +57,10 @@ def extract_transcript_YouTubeTranscriptApi(video_id: str) -> List[Dict[str, Any
         except Exception as e:
             logging.warning(f"Attempt {attempt + 1}/{MAX_RETRIES_YT_TRANSCRIPT_API} failed for video id {video_id}: {e}")
             
+            if "This video is private" in str(e):
+                logging.error(f"Video is private: {video_id}")
+                return {"code": 403, "message": "Video is private"}
+            
             # If this was the last attempt, log error and return None
             if attempt == MAX_RETRIES_YT_TRANSCRIPT_API - 1:
                 logging.error(f"All {MAX_RETRIES_YT_TRANSCRIPT_API} attempts failed for video id {video_id}. Final error: {e}")
