@@ -20,10 +20,10 @@ settings = get_settings()
 # Create a single, reusable client instance. This is more efficient and thread-safe.
 gemini_client = genai.Client(api_key=settings.google_gemini_api_key)
 
-GEMINI_MODEL = "gemini-1.5-flash-latest" # INPUT: $0.35 per 1M tokens, OUTPUT: $0.70 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
-#GEMINI_MODEL = "gemini-1.5-pro-latest" # INPUT: $3.50 per 1M tokens, OUTPUT: $10.50 per 1M tokens (Best results, super slow, expensive) 2min 6sec for 3hr 135 claims
+# GEMINI_MODEL = "gemini-1.5-flash-latest" # INPUT: $0.35 per 1M tokens, OUTPUT: $0.70 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
+# #GEMINI_MODEL = "gemini-1.5-pro-latest" # INPUT: $3.50 per 1M tokens, OUTPUT: $10.50 per 1M tokens (Best results, super slow, expensive) 2min 6sec for 3hr 135 claims
 
-#GEMINI_MODEL = "gemini-2.5-flash-preview-05-20" # INPUT: $0.15 per 1M tokens, OUTPUT: $0.60 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
+GEMINI_MODEL = "gemini-2.5-flash-preview-05-20" # INPUT: $0.15 per 1M tokens, OUTPUT: $0.60 per 1M tokens (Great results, cost effective, slower) 35sec for 3hr 80 claims
 #GEMINI_MODEL = "gemini-2.0-flash-lite" # INPUT: $0.075 per 1M tokens, OUTPUT: $0.30 per 1M tokens (good results, cost efficient, low latency) (Need it to elaborate more for context and search query) 16 sec for 3hr 61 claims
 
 #GEMINI_MODEL = "gemini-2.5-pro-preview-06-05" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Best results, super slow, expensive) 2min 6sec for 3hr 135 claims
@@ -257,3 +257,22 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
 - Speechmatics 
 - Groq-distil-whisper
 '''
+
+async def call_gemini_agent(prompt: str):
+    """
+    Calls the Gemini API with a generic prompt and returns the response.
+    """
+    
+    def _sync_generate_content(prompt):
+        """Synchronous wrapper for Gemini API call that reuses the global client."""
+        return gemini_client.models.generate_content(
+            model="gemini-2.5-pro-preview-06-05",
+            contents=prompt
+        )
+
+    try:
+        response = await asyncio.to_thread(_sync_generate_content, prompt)
+        return response.text
+    except Exception as e:
+        logging.error(f"Error calling Gemini API: {e}")
+        raise

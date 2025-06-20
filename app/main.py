@@ -103,7 +103,8 @@ else:
             settings.frontend_url,
             "https://www.videoclaimcatcher.com",
             "https://videoclaimcatcher.com",
-            "https://backdoor-1j4w.onrender.com"    
+            "https://backdoor-1j4w.onrender.com",
+            "https://x-post-generator.onrender.com"  
         ],
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS"],

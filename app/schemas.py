@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 # Define request model for execute endpoint
 class VideoExecutionRequest(BaseModel):
@@ -17,6 +17,11 @@ class DeepSearchRequest(BaseModel):
     videoTags: Optional[List[str]] = None # Optional list of strings
     query: Optional[str] = None
     selectedLanguage: str = "en"
+    
+class PostGenerationRequest(BaseModel):
+    claims: List[Dict[str, Any]]
+    video_data: Dict[str, Any]
+    prompt: str
     
 class ClaimResponse(BaseModel):
     title: str
