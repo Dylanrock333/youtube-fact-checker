@@ -236,7 +236,7 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
             The post should match the themes and intesity of the video and claims. Post should be organized by timestamp.
         """
         
-        logging.info(f"Final prompt: {final_prompt}")
+        #logging.info(f"Final prompt: {final_prompt}")
         
         # Call the Gemini agent with the newly constructed prompt
         response = await call_gemini_agent(final_prompt)
