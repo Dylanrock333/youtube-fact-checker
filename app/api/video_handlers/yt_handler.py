@@ -239,14 +239,15 @@ async def get_yt_video_info(video_id, language):
         "tags": video_data['snippet'].get('tags', [])
     }
     
-    
     youtube_video_data = {
         "title": "Unknown title",
         "tags": [],
         "channel_title": "Unknown channel title",
         "view_count": 0,
         "published_at": "Unknown published at",
-        "duration": "Unknown duration"
+        "duration": "Unknown duration",
+        "thumbnail": "Unknown thumbnail",
+        "description": "Unknown description"
     }
     
     youtube_video_data["title"] = youtube_video_info.get("title")
@@ -264,6 +265,9 @@ async def get_yt_video_info(video_id, language):
     # Format duration to standard format
     raw_duration = youtube_video_info.get("duration", "")
     youtube_video_data["duration"] = format_duration(raw_duration)
+    
+    youtube_video_data["thumbnail"] = youtube_video_info.get("thumbnails", {}).get("high", {}).get("url", "Unknown thumbnail")
+    youtube_video_data["description"] = youtube_video_info.get("description", "Unknown description")
     
     #TODO: Fix duration format 
     
