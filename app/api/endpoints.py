@@ -8,6 +8,9 @@ from app.schemas import VideoExecutionRequest, DeepSearchRequest, PostGeneration
 import logging
 from app.utility import limiter, limitter_logger
 import time
+from app.api.video_handlers.yt_video_search import fetch_videos, collect_all_videos_from_config, get_all_youtube_videos
+from app.api.video_handlers.yt_video_search_filtering import classify_video_agent
+import os
 
 router = APIRouter()
 
@@ -16,6 +19,48 @@ router = APIRouter()
 async def health_check():
     """Health check endpoint to verify the API is running."""
     return {"status": "healthy"}
+
+@router.get("/slideshow-videos", tags=["Videos"])
+async def slideshow_videos():
+    """Slideshow videos endpoint that fetches videos from multiple categories using config file."""
+    try:
+        logging.info("Slideshow videos endpoint called")
+        
+        # # Get the path to the config file (relative to the project root)
+        # config_path = os.path.join("config", "video_queries.json")
+        
+        # # Fetch cleaned videos from all categories and queries in the config
+        # videos = get_all_youtube_videos(config_path)
+        
+        # logging.info(f"Successfully fetched {len(videos) if videos else 0} cleaned videos from all categories")
+        
+        # # Group videos by category for better organization
+        # videos_by_category = {}
+        # for video in videos:
+        #     category = video.get("category", "unknown")
+        #     if category not in videos_by_category:
+        #         videos_by_category[category] = []
+        #     videos_by_category[category].append(video)
+        
+        # return {
+        #     "videos": videos,
+        #     "count": len(videos) if videos else 0,
+        #     "categories": list(videos_by_category.keys()),
+        #     "videos_by_category": videos_by_category
+        # }
+        config_path = os.path.join("config", "sample.json")
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+        
+        
+        
+        classified_videos = classify_video_agent(config)
+        
+        return classified_videos
+        
+    except Exception as e:
+        logging.error(f"Error in slideshow_videos endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching videos: {str(e)}")
 
 # Add this function to get the analytics DB from app state
 def get_analytics_db(request: Request):
@@ -204,7 +249,7 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
             Here is an example:
             [START OF EXAMPLE]
             ---
-            🚨 Sam Altman just dropped a ton of 🔥 insights in the first episode of OpenAI’s new podcast.
+            🚨 Sam Altman just dropped a ton of 🔥 insights in the first episode of OpenAI's new podcast.
 
             From AGI timelines and GPT-5 to social media mistakes, hallucinating AIs, and even giant compute facilities…
 
@@ -213,7 +258,7 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
             ---
             1. 🧠 AGI Yearly? (00:48)
 
-            “I think more and more people will think we’ve gotten to an AGI system every year.”
+            "I think more and more people will think we've gotten to an AGI system every year."
 
             Each year, AI improves so quickly that public perception is shifting. Altman suggests we may start declaring AGI annually — not because AI is AGI, but because the definition keeps moving forward.
             ---
@@ -221,7 +266,7 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
             ---
             9. ⚗️ AI & Drug Discovery (35:20)
 
-            “We already have existing drugs… but with a couple of small modifications, we are very close to something great.”
+            "We already have existing drugs… but with a couple of small modifications, we are very close to something great."
 
             Altman believes AI could unlock hidden uses of existing medicines — a silent revolution in pharma powered by large models and data reinterpretation.
             ---

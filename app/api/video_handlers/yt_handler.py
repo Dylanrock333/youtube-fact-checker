@@ -196,7 +196,7 @@ def get_yt_transcript(video_id: str, timeout_seconds: int = 20) -> Optional[List
         return None
     
     
-async def get_yt_video_info(video_id, language):
+def get_yt_video_info(video_id, language = "en"):
     settings = get_settings()
     google_yt_api_key = settings.google_yt_api_key
     youtube = googleapiclient.discovery.build('youtube', 'v3', developerKey=google_yt_api_key)
@@ -208,7 +208,6 @@ async def get_yt_video_info(video_id, language):
             part='snippet,contentDetails,statistics',
             id=video_id
         ).execute()
-        
     except Exception as e:
         logging.error(f"API Error: {str(e)}")
         return {"error": str(e)}
@@ -247,12 +246,14 @@ async def get_yt_video_info(video_id, language):
         "published_at": "Unknown published at",
         "duration": "Unknown duration",
         "thumbnail": "Unknown thumbnail",
-        "description": "Unknown description"
+        "description": "Unknown description",
+        "channelId": "Unknown channel id"
     }
     
     youtube_video_data["title"] = youtube_video_info.get("title")
     youtube_video_data["tags"] = youtube_video_info.get("tags")
     youtube_video_data["channel_title"] = youtube_video_info.get("channel_title")
+    youtube_video_data["channelId"] = youtube_video_info.get("channel_id")
     
     # Format view count according to locale
     raw_view_count = youtube_video_info.get("view_count", 0)
@@ -270,11 +271,11 @@ async def get_yt_video_info(video_id, language):
     youtube_video_data["description"] = youtube_video_info.get("description", "Unknown description")
     
     #TODO: Fix duration format 
-    
+    #logging.info(f"youtube_video_data: {youtube_video_data}")
     try:
         if language != 'en':            
             logging.info(f"Translating title to {language}")
-            translated_title = await translate_full_prompt(youtube_video_info.get("title"), language)
+            translated_title = translate_full_prompt(youtube_video_info.get("title"), language)
             youtube_video_data["title"] = translated_title
         else:
             youtube_video_data["title"] = youtube_video_info.get("title")

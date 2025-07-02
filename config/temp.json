@@ -1,0 +1,62 @@
+{
+    "educational": {
+      "recent_queries": [
+        "science explained",
+        "how things work",
+        "what is quantum computing"
+      ],
+      "historical_queries": [
+        "best educational videos",
+        "physics explained",
+        "explainer video"
+      ]
+    },
+    "podcasts": {
+      "recent_queries": [
+        "lex fridman interview",
+        "joe rogan clips",
+        "huberman podcast highlights"
+      ],
+      "historical_queries": [
+        "most viewed podcast interviews",
+        "deep podcast conversations",
+        "viral podcast moments"
+      ]
+    },
+    "news_and_politics": {
+      "recent_queries": [
+        "political commentary today",
+        "breaking news analysis",
+        "current events explained"
+      ],
+      "historical_queries": [
+        "top political debates",
+        "history of US elections",
+        "global crisis explained"
+      ]
+    },
+    "history_and_society": {
+      "recent_queries": [
+        "ancient history explained",
+        "timeline of major events",
+        "who was julius caesar"
+      ],
+      "historical_queries": [
+        "world war 2 documentary",
+        "history of rome",
+        "civilizations that disappeared"
+      ]
+    },
+    "economy_and_finance": {
+      "recent_queries": [
+        "market analysis today",
+        "inflation explained",
+        "ray dalio economy 2025"
+      ],
+      "historical_queries": [
+        "why recessions happen",
+        "personal finance tips",
+        "how the economy works"
+      ]
+    }
+  } 

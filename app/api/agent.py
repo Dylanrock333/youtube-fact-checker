@@ -276,3 +276,49 @@ async def call_gemini_agent(prompt: str):
     except Exception as e:
         logging.error(f"Error calling Gemini API: {e}")
         raise
+    
+    
+def call_gemini_agent(prompt: str, inputs: Dict[str, Any] = None, schema: Dict[str, Any] = None):
+    """
+    Synchronous Gemini API call with support for structured output.
+    
+    Args:
+        prompt: The prompt to send to the model
+        inputs: Additional data to include in the prompt (optional)
+        schema: JSON schema for structured output (optional)
+    """
+    try:
+        # Build the full prompt with inputs if provided
+        if inputs:
+            full_prompt = f"{prompt}\n\nData:\n{json.dumps(inputs, indent=2)}"
+        else:
+            full_prompt = prompt
+            
+        # Configure the generation config based on whether schema is provided
+        if schema:
+            config = {
+                'response_mime_type': 'application/json',
+                'response_schema': schema,
+            }
+        else:
+            config = {}
+            
+        response = gemini_client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=full_prompt,
+            config=config
+        )
+        
+        # If schema is provided, parse the JSON response
+        if schema:
+            try:
+                return json.loads(response.text)
+            except json.JSONDecodeError as e:
+                logging.error(f"Failed to parse JSON response: {e}")
+                logging.error(f"Raw response: {response.text}")
+                raise
+        
+        return response.text
+    except Exception as e:
+        logging.error(f"Error calling Gemini API: {e}")
+        raise
