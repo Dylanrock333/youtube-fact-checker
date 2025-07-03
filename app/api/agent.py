@@ -321,4 +321,60 @@ def call_gemini_agent(prompt: str, inputs: Dict[str, Any] = None, schema: Dict[s
         return response.text
     except Exception as e:
         logging.error(f"Error calling Gemini API: {e}")
-        raise
+        raise   
+    
+def filter_and_clean_claims_agent(claim_list, video_data, video_id):
+    
+
+    full_prompt = f"""
+    You are given a list of claims extracted from a YouTube video using my application, Video Claim Catcher. 
+    This app helps users research, fact-check, and better understand statements made in videos.
+
+    Your task is to select the **3 to 6 most relevant claims** that best reflect the purpose of the app: 
+    helping users **evaluate**, **verify**, and **learn from** statements made in online videos.
+
+    Important:
+    - Do **not** modify the wording of the claims. Copy the selected claims exactly.
+    - You may shorten or clarify the surrounding context (e.g., video title, channel, date) to make it more readable on the front page.
+    - Prioritize claims that are **fact-based**, **educational**, or **controversial** enough to invite verification.
+
+    Video Title:
+    {video_data["title"]}
+
+    Channel:
+    {video_data["channel_title"]}
+
+    Published:
+    {video_data["published_at"]}
+
+    List of claims:
+    {claim_list}
+    """
+
+    
+    
+        
+    response = gemini_client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=full_prompt,
+        config={
+            'response_mime_type': 'application/json',
+            'response_schema': list[ClaimResponse],
+        }
+    )
+    
+    response_text = response.text
+    claims = json.loads(response_text)
+    
+    return_dict = {
+        "video_id": video_id,
+        "title": video_data["title"],
+        "channel_title": video_data["channel_title"],
+        "published_at": video_data["published_at"],
+        "view_count": video_data["view_count"],
+        "duration": video_data["duration"],
+        "claims": claims
+    }
+    
+    return return_dict
+        

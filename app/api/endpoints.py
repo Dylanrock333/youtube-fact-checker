@@ -9,7 +9,7 @@ import logging
 from app.utility import limiter, limitter_logger
 import time
 from app.api.video_handlers.yt_video_search import fetch_videos, collect_all_videos_from_config, get_all_youtube_videos
-from app.api.video_handlers.yt_video_search_filtering import classify_video_agent
+from app.api.video_handlers.yt_video_search_filtering import classify_video_agent, get_final_front_page_videos
 import os
 
 router = APIRouter()
@@ -26,37 +26,42 @@ async def slideshow_videos():
     try:
         logging.info("Slideshow videos endpoint called")
         
-        # # Get the path to the config file (relative to the project root)
-        # config_path = os.path.join("config", "video_queries.json")
+        # Get the path to the config file (relative to the project root)
+        config_path = os.path.join("config", "video_queries.json")
         
-        # # Fetch cleaned videos from all categories and queries in the config
-        # videos = get_all_youtube_videos(config_path)
+        # Fetch cleaned videos from all categories and queries in the config
+        videos = await get_all_youtube_videos(config_path)
         
-        # logging.info(f"Successfully fetched {len(videos) if videos else 0} cleaned videos from all categories")
+        logging.info(f"Successfully fetched {len(videos) if videos else 0} cleaned videos from all categories")
         
-        # # Group videos by category for better organization
-        # videos_by_category = {}
-        # for video in videos:
-        #     category = video.get("category", "unknown")
-        #     if category not in videos_by_category:
-        #         videos_by_category[category] = []
-        #     videos_by_category[category].append(video)
+        # Group videos by category for better organization
+        videos_by_category = {}
+        for video in videos:
+            category = video.get("category", "unknown")
+            if category not in videos_by_category:
+                videos_by_category[category] = []
+            videos_by_category[category].append(video)
         
-        # return {
-        #     "videos": videos,
-        #     "count": len(videos) if videos else 0,
-        #     "categories": list(videos_by_category.keys()),
-        #     "videos_by_category": videos_by_category
-        # }
-        config_path = os.path.join("config", "sample.json")
-        with open(config_path, "r", encoding="utf-8") as f:
-            config = json.load(f)
+        slideshow_videos = {
+            "videos": videos,
+            "count": len(videos) if videos else 0,
+            "categories": list(videos_by_category.keys()),
+            "videos_by_category": videos_by_category
+        }
         
         
+        classified_videos = await classify_video_agent(slideshow_videos)
         
-        classified_videos = classify_video_agent(config)
+        final_front_page_videos = await get_final_front_page_videos(classified_videos)
         
-        return classified_videos
+        # Save the final front page videos to a JSON file
+        output_path = os.path.join("config", "final_front_page_videos.json")
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(final_front_page_videos, f, indent=2, ensure_ascii=False)
+        
+        logging.info(f"Saved final front page videos to {output_path}")
+        
+        return final_front_page_videos
         
     except Exception as e:
         logging.error(f"Error in slideshow_videos endpoint: {str(e)}")
@@ -79,7 +84,7 @@ async def execute_stream(
     """
     limitter_logger(request, "execute_stream")
     start_time = time.time()
-    
+    logging.info(f"Execute stream endpoint called for video {payload}")
     async def event_generator():
         video_data_from_processing = {}
         try:

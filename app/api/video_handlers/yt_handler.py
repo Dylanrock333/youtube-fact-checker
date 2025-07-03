@@ -196,7 +196,7 @@ def get_yt_transcript(video_id: str, timeout_seconds: int = 20) -> Optional[List
         return None
     
     
-def get_yt_video_info(video_id, language = "en"):
+async def get_yt_video_info(video_id, language = "en"):
     settings = get_settings()
     google_yt_api_key = settings.google_yt_api_key
     youtube = googleapiclient.discovery.build('youtube', 'v3', developerKey=google_yt_api_key)

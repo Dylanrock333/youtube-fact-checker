@@ -14,7 +14,7 @@ YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3/search"
 settings = get_settings()
 google_yt_api_key = settings.google_yt_api_key
 
-def get_all_youtube_videos(config_path: str):
+async def get_all_youtube_videos(config_path: str):
     """
     Calls the full video collection process and returns cleaned video data.
 
@@ -25,7 +25,7 @@ def get_all_youtube_videos(config_path: str):
     Returns:
         list: List of cleaned video dictionaries with core metadata.
     """
-    raw_results = collect_all_videos_from_config(config_path)
+    raw_results = await collect_all_videos_from_config(config_path)
 
     # Filter videos for quality
     quality_videos = [video for video in raw_results if is_quality_video(video)]
@@ -140,7 +140,7 @@ def fetch_videos(query: str, is_historical: bool = False):
     return videos
 
 
-def collect_all_videos_from_config(config_path: str):
+async def collect_all_videos_from_config(config_path: str):
     """
     Loads a JSON config and fetches YouTube videos for each recent and historical query.
     
@@ -177,7 +177,7 @@ def collect_all_videos_from_config(config_path: str):
                 for video in videos:
                     try:
                         # Get detailed video info (this is async, so we need to handle it)
-                        video_info = get_yt_video_info(video["videoId"])
+                        video_info = await get_yt_video_info(video["videoId"])
                         if video_info and "error" not in video_info:
                             # Merge the additional video info into the base video data
                             video.update(video_info)
@@ -213,7 +213,7 @@ def collect_all_videos_from_config(config_path: str):
                 for video in videos:
                     try:
                         # Get detailed video info (this is async, so we need to handle it)
-                        video_info = get_yt_video_info(video["videoId"])
+                        video_info = await get_yt_video_info(video["videoId"])
                         if video_info and "error" not in video_info:
                             # Merge the additional video info into the base video data
                             video.update(video_info)

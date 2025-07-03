@@ -1,8 +1,8 @@
 import logging
-from app.api.agent import call_gemini_agent
+from app.api.agent import call_gemini_agent, filter_and_clean_claims_agent
+from app.api.claim_analysis.claim_extraction import process_video_claims_stream
 
-
-def classify_video_agent(config):
+async def classify_video_agent(config):
     
     logging.info(f"number of videos: {len(config['videos'])}")
     
@@ -112,11 +112,40 @@ Respond only with a JSON array where each element has:
     # Organize videos by category and remove those classified as 'none'
     classified_videos = classify_videos(all_results, list_of_videos)
     
+    n_videos_per_category = 5
+    for category, videos in classified_videos.items():
+        videos.sort(key=lambda x: x["view_count"], reverse=True)
+        classified_videos[category] = videos[:n_videos_per_category]
+
+    video_claims_classified = {
+        "educational": [],
+        "podcasts": [],
+        "news_and_politics": [],
+        "history_and_society": [],
+        "economy_and_finance": []
+    }
+    # Process claims for videos in each category
+    for category, videos in classified_videos.items():
+        logging.info(f"Processing {len(videos)} videos in category: {category}")
+        for video in videos:
+            try:
+                # Consume the async generator to get the final result
+                final_result = None
+                async for update in process_video_claims_stream(video["videoId"], "youtube", "en"):
+                    if update.get("status") == "complete":
+                        final_result = update
+                        break
+                
+                if final_result:
+                    logging.info(f"Processed claims for video {video['videoId']} in category {category}")
+                    video_claims_classified[category].append(final_result)
+                else:
+                    logging.warning(f"No final result received for video {video['videoId']}")
+                    
+            except Exception as e:
+                logging.error(f"Error processing claims for video {video['videoId']}: {e}")
     
-    
-    
-    
-    return classified_videos
+    return video_claims_classified
 
 
 
@@ -180,3 +209,27 @@ def classify_videos(all_results, list_of_videos):
             logging.info(f"  {category}: {len(videos)} videos")
     
     return categorized_videos
+
+async def get_final_front_page_videos(classified_videos):
+    final_front_page_videos = {
+        "educational": [],
+        "podcasts": [],
+        "news_and_politics": [],
+        "history_and_society": [],
+        "economy_and_finance": []
+    }
+    logging.info(f"Getting cleaning and filtering front page videos for {len(classified_videos)} categories")
+    for category, videos in classified_videos.items():
+        logging.info(f"Processing {len(videos)} videos in category: {category}")
+        for video in videos:
+            print(video['data']['video_data']['title'])
+            print(len(video['data']['claims']))
+            
+            claim_list = video['data']['claims']
+            final_claim_list = filter_and_clean_claims_agent(claim_list, video['data']['video_data'], video['data']['videoID'])
+            try:
+                final_front_page_videos[category].append(final_claim_list)
+                    
+            except Exception as e:
+                logging.error(f"Error processing claims for video {video}: {e}")
+    return final_front_page_videos
