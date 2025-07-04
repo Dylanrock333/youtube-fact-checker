@@ -81,7 +81,7 @@ def fetch_videos(query: str, is_historical: bool = False):
         "q": query,
         "type": "video",
         "maxResults": max_results,
-        "relevanceLanguage": "en",
+        "relevanceLanguage": "en",               
         "key": settings.google_yt_api_key
     }
 

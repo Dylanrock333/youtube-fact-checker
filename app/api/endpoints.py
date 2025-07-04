@@ -24,42 +24,46 @@ async def health_check():
 async def slideshow_videos():
     """Slideshow videos endpoint that fetches videos from multiple categories using config file."""
     try:
-        logging.info("Slideshow videos endpoint called")
+        # logging.info("Slideshow videos endpoint called")
         
-        # Get the path to the config file (relative to the project root)
-        config_path = os.path.join("config", "video_queries.json")
+        # # Get the path to the config file (relative to the project root)
+        # config_path = os.path.join("config", "video_queries.json")
         
-        # Fetch cleaned videos from all categories and queries in the config
-        videos = await get_all_youtube_videos(config_path)
+        # # Fetch cleaned videos from all categories and queries in the config
+        # videos = await get_all_youtube_videos(config_path)
         
-        logging.info(f"Successfully fetched {len(videos) if videos else 0} cleaned videos from all categories")
+        # logging.info(f"Successfully fetched {len(videos) if videos else 0} cleaned videos from all categories")
         
-        # Group videos by category for better organization
-        videos_by_category = {}
-        for video in videos:
-            category = video.get("category", "unknown")
-            if category not in videos_by_category:
-                videos_by_category[category] = []
-            videos_by_category[category].append(video)
+        # # Group videos by category for better organization
+        # videos_by_category = {}
+        # for video in videos:
+        #     category = video.get("category", "unknown")
+        #     if category not in videos_by_category:
+        #         videos_by_category[category] = []
+        #     videos_by_category[category].append(video)
         
-        slideshow_videos = {
-            "videos": videos,
-            "count": len(videos) if videos else 0,
-            "categories": list(videos_by_category.keys()),
-            "videos_by_category": videos_by_category
-        }
+        # slideshow_videos = {
+        #     "videos": videos,
+        #     "count": len(videos) if videos else 0,
+        #     "categories": list(videos_by_category.keys()),
+        #     "videos_by_category": videos_by_category
+        # }
         
         
-        classified_videos = await classify_video_agent(slideshow_videos)
+        # classified_videos = await classify_video_agent(slideshow_videos)
         
-        final_front_page_videos = await get_final_front_page_videos(classified_videos)
+        # final_front_page_videos = await get_final_front_page_videos(classified_videos)
         
-        # Save the final front page videos to a JSON file
+        # # Save the final front page videos to a JSON file
+        # output_path = os.path.join("config", "final_front_page_videos.json")
+        # with open(output_path, "w", encoding="utf-8") as f:
+        #     json.dump(final_front_page_videos, f, indent=2, ensure_ascii=False)
+        
+        # logging.info(f"Saved final front page videos to {output_path}")
+        
         output_path = os.path.join("config", "final_front_page_videos.json")
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(final_front_page_videos, f, indent=2, ensure_ascii=False)
-        
-        logging.info(f"Saved final front page videos to {output_path}")
+        with open(output_path, "r", encoding="utf-8") as f:
+            final_front_page_videos = json.load(f)
         
         return final_front_page_videos
         

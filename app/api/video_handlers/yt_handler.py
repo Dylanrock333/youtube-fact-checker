@@ -311,26 +311,41 @@ def format_published_date(iso_date: str, language: str) -> str:
             return iso_date
         
 def format_duration(iso_duration: str) -> str:
-    """Convert ISO 8601 duration (PT10M30S) to standard format (10:30)"""
-    try:
-        # Parse ISO 8601 duration format
-        pattern = r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?'
-        match = re.match(pattern, iso_duration)
-        
-        if not match:
-            return iso_duration
-            
-        hours, minutes, seconds = match.groups()
-        hours = int(hours) if hours else 0
-        minutes = int(minutes) if minutes else 0
-        seconds = int(seconds) if seconds else 0
-        
-        if hours > 0:
-            return f"{hours}:{minutes:02d}:{seconds:02d}"
-        else:
-            return f"{minutes}:{seconds:02d}"
-    except:
-        return iso_duration
+    """Convert ISO 8601 duration (e.g., PT10M30S, P1DT2H) to H:M:S format."""
+    if not iso_duration or not iso_duration.startswith('P'):
+        return "0:00"
+
+    # Regex to parse ISO 8601 duration
+    pattern = re.compile(
+        r'P'
+        r'(?:(?P<days>\d+)D)?'
+        r'(?:T'
+        r'(?:(?P<hours>\d+)H)?'
+        r'(?:(?P<minutes>\d+)M)?'
+        r'(?:(?P<seconds>\d+)S)?'
+        r')?'
+    )
+
+    match = pattern.match(iso_duration)
+    if not match:
+        # Fallback for simple formats like "PT0S" or "P0D"
+        if iso_duration in ["PT0S", "P0D"]:
+            return "0:00"
+        logging.warning(f"Could not parse ISO 8601 duration: {iso_duration}")
+        return "0:00"
+
+    parts = match.groupdict()
+    days = int(parts.get('days') or 0)
+    hours = int(parts.get('hours') or 0)
+    minutes = int(parts.get('minutes') or 0)
+    seconds = int(parts.get('seconds') or 0)
+
+    total_hours = days * 24 + hours
+
+    if total_hours > 0:
+        return f"{total_hours}:{minutes:02d}:{seconds:02d}"
+    
+    return f"{minutes}:{seconds:02d}"
     
 def timestamp_format(timestamp: str) -> str:
     """

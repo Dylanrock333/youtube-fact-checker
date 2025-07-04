@@ -1,10 +1,52 @@
 {
-  "podcasts": {
+  "educational": {
     "recent_queries": [
-      "controversial interview"
+      "science explained",
+      "how things work"
     ],
     "historical_queries": [
-      "most viewed and intresting podcast interviews"
+      "best educational videos",
+      "explainer video"
+    ]
+  },
+  "podcasts": {
+    "recent_queries": [
+      "huberman podcast highlights",
+      "joe rogan"
+    ],
+    "historical_queries": [
+      "most viewed podcast interviews",
+      "deep podcast conversations"
+    ]
+  },
+  "news_and_politics": {
+    "recent_queries": [
+      "political commentary today",
+      "breaking news analysis"    
+    ],
+    "historical_queries": [
+      "top political debates",
+      "history of US elections"
+    ]
+  },
+  "history_and_society": {
+    "recent_queries": [
+      "ancient history explained",
+      "timeline of major events"
+    ],
+    "historical_queries": [
+      "world war 2 documentary",
+      "civilizations that disappeared"
+    ]
+  },
+  "economy_and_finance": {
+    "recent_queries": [
+      "market analysis today",
+      "inflation explained"
+    ],
+    "historical_queries": [
+      "why recessions happen",
+      "how the economy works"
     ]
   }
 } 

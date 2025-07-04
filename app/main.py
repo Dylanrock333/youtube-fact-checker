@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
 from app.config import get_settings
 from app.analytics import AnalyticsDB
+from app.scheduler import start_scheduler
 
 # Custom formatter to truncate long URLs in all log messages
 class URLTruncatingFormatter(logging.Formatter):
@@ -114,6 +115,21 @@ else:
 
 # Include the router from endpoints
 app.include_router(router, prefix="/api")
+
+# --- Scheduler lifecycle hooks ----
+@app.on_event("startup")
+async def _startup_scheduler():
+    """Start the APScheduler when the FastAPI app starts."""
+    app.state.scheduler = start_scheduler()
+
+
+@app.on_event("shutdown")
+async def _shutdown_scheduler():
+    """Shutdown the APScheduler when the FastAPI app stops."""
+    scheduler = getattr(app.state, "scheduler", None)
+    if scheduler:
+        scheduler.shutdown()
+        logger.info("Scheduler shut down successfully.")
 
 # Main execution
 if __name__ == "__main__":
