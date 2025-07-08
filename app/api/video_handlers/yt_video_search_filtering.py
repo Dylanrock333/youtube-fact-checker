@@ -112,7 +112,9 @@ Respond only with a JSON array where each element has:
     # Organize videos by category and remove those classified as 'none'
     classified_videos = classify_videos(all_results, list_of_videos)
     
-    n_videos_per_category = 5
+    
+    n_videos_per_category = 8 # Important var 
+    
     for category, videos in classified_videos.items():
         videos.sort(key=lambda x: x["view_count"], reverse=True)
         classified_videos[category] = videos[:n_videos_per_category]

@@ -14,6 +14,27 @@ YOUTUBE_API_URL = "https://www.googleapis.com/youtube/v3/search"
 settings = get_settings()
 google_yt_api_key = settings.google_yt_api_key
 
+def remove_duplicate_videos_by_id(videos):
+    """
+    Remove duplicate videos based on videoId, keeping the first occurrence.
+    
+    Args:
+        videos (list): List of video dictionaries
+        
+    Returns:
+        list: List of videos with duplicates removed
+    """
+    seen_video_ids = set()
+    unique_videos = []
+    
+    for video in videos:
+        video_id = video.get("videoId")
+        if video_id and video_id not in seen_video_ids:
+            seen_video_ids.add(video_id)
+            unique_videos.append(video)
+    
+    return unique_videos
+
 async def get_all_youtube_videos(config_path: str):
     """
     Calls the full video collection process and returns cleaned video data.
@@ -32,9 +53,14 @@ async def get_all_youtube_videos(config_path: str):
     removed_count = len(raw_results) - len(quality_videos)
     logging.info(f"Removed {removed_count} videos due to quality filters")
 
+    # Remove videos duplicates by videoID
+    unique_videos = remove_duplicate_videos_by_id(quality_videos)
+    duplicate_count = len(quality_videos) - len(unique_videos)
+    logging.info(f"Removed {duplicate_count} duplicate videos by videoId")
+    
     # Extract only important fields
     cleaned_videos = []
-    for video in quality_videos:
+    for video in unique_videos:
         cleaned = {
             "videoId": video.get("videoId"),
             "title": video.get("title"),

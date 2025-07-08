@@ -258,7 +258,7 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
 - Groq-distil-whisper
 '''
 
-async def call_gemini_agent(prompt: str):
+async def tweet_generation_agent(prompt: str):
     """
     Calls the Gemini API with a generic prompt and returns the response.
     """
@@ -327,16 +327,15 @@ def filter_and_clean_claims_agent(claim_list, video_data, video_id):
     
 
     full_prompt = f"""
-    You are given a list of claims extracted from a YouTube video using my application, Video Claim Catcher. 
-    This app helps users research, fact-check, and better understand statements made in videos.
+    You are helping design a front page for the app **Video Claim Catcher**, which extracts and analyzes statements made in YouTube videos. 
 
-    Your task is to select the **3 to 6 most relevant claims** that best reflect the purpose of the app: 
-    helping users **evaluate**, **verify**, and **learn from** statements made in online videos.
+    You are given a list of claims extracted from a video, along with context and metadata.
 
-    Important:
-    - Do **not** modify the wording of the claims. Copy the selected claims exactly.
-    - You may shorten or clarify the surrounding context (e.g., video title, channel, date) to make it more readable on the front page.
-    - Prioritize claims that are **fact-based**, **educational**, or **controversial** enough to invite verification.
+    Your job is to:
+    1. **Select 3–6 claims** that are the most useful, interesting, or surprising — things that invite users to learn more or verify.
+    2. **Rewrite each claim to be short, clear, and punchy** — it must be easy to read and fit nicely on a UI card. Prioritize simple sentence structure and clarity. Limit each claim to around **1 sentence** or about **40 words**.
+    3. **Do not change the meaning of the claim**, just make it **more readable and catchy**. Avoid long or complex phrasing.
+    4. **Preserve attribution** only if it's important to the credibility (e.g. "according to a professor" or "Maya Angelou said..."). Otherwise, focus on the core message.
 
     Video Title:
     {video_data["title"]}

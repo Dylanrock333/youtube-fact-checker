@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import os
@@ -32,7 +32,12 @@ async def update_json_file():
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(videos, f, indent=2, ensure_ascii=False)
         
-        logging.info(f"Successfully fetched {len(videos) if videos else 0} cleaned videos from all categories")
+        # # Read existing videos from file instead of fetching
+        # videos_path = os.path.join("config", "raw_front_page_videos.json")
+        # with open(videos_path, "r", encoding="utf-8") as f:
+        #     videos = json.load(f)
+        
+        logging.info(f"Successfully loaded {len(videos) if videos else 0} videos from file")
         
         # Group videos by category for better organization
         videos_by_category = {}
@@ -72,29 +77,29 @@ async def update_json_file():
 def start_scheduler():
     """Start an AsyncIO scheduler.
 
-    • In production: run nightly at 03:00 UTC.
+    • In production: run nightly at 8:55 AM Central Time.
     • In dev: ALSO schedule a one-off run 1 minute after startup so you can
-      watch it execute without waiting until 3 AM.
+      watch it execute without waiting until 8:55 AM.
     """
-    scheduler = AsyncIOScheduler(timezone="UTC")
+    scheduler = AsyncIOScheduler(timezone="America/Chicago")
 
     # Nightly job (always enabled)
-    nightly_trigger = CronTrigger(hour=3, minute=0, second=0)
+    nightly_trigger = CronTrigger(hour=13, minute=20, second=0)
     scheduler.add_job(update_json_file, nightly_trigger, id="daily_json_update", replace_existing=True)
 
     #Uncomment this to run the job immediately
-    # # Extra immediate run in dev environment
-    # settings = get_settings()
-    # if settings.environment.lower() == "dev":
-    #     run_at = datetime.utcnow() + timedelta(minutes=1)
-    #     scheduler.add_job(
-    #         update_json_file,
-    #         "date",
-    #         run_date=run_at,
-    #         id="dev_one_off",
-    #         replace_existing=True,
-    #     )
-    #     logger.info("Dev mode: scheduled one-off update_json_file for %s UTC", run_at.isoformat())
+    # Extra immediate run in dev environment
+    settings = get_settings()
+    if settings.environment.lower() == "dev":
+        run_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+        scheduler.add_job(
+            update_json_file,
+            "date",
+            run_date=run_at,
+            id="dev_one_off",
+            replace_existing=True,
+        )
+        logger.info("Dev mode: scheduled one-off update_json_file for %s UTC", run_at.isoformat())
 
     scheduler.start()
     logger.info("APScheduler started (timezone=UTC)")

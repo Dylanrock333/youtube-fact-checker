@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 import uvicorn
 import sys
 import asyncio
+from contextlib import asynccontextmanager
 
 # # Platform-specific asyncio policy for Windows to avoid gRPC/HTTPX errors
 # if sys.platform == "win32":
@@ -52,10 +53,27 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler for FastAPI app startup and shutdown."""
+    # Startup
+    logger.info("Starting up the application...")
+    app.state.scheduler = start_scheduler()
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down the application...")
+    scheduler = getattr(app.state, "scheduler", None)
+    if scheduler:
+        scheduler.shutdown()
+        logger.info("Scheduler shut down successfully.")
+
 app = FastAPI(
     title="YouTube Claims API",
     description="API for processing YouTube videos and extracting controversial claims",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 nltk.download('punkt')
@@ -115,21 +133,6 @@ else:
 
 # Include the router from endpoints
 app.include_router(router, prefix="/api")
-
-# --- Scheduler lifecycle hooks ----
-@app.on_event("startup")
-async def _startup_scheduler():
-    """Start the APScheduler when the FastAPI app starts."""
-    app.state.scheduler = start_scheduler()
-
-
-@app.on_event("shutdown")
-async def _shutdown_scheduler():
-    """Shutdown the APScheduler when the FastAPI app stops."""
-    scheduler = getattr(app.state, "scheduler", None)
-    if scheduler:
-        scheduler.shutdown()
-        logger.info("Scheduler shut down successfully.")
 
 # Main execution
 if __name__ == "__main__":
