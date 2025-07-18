@@ -1,32 +1,57 @@
 {
-  "educational": [
-    "science explained",
-    "how things work",
-    "best educational videos",
-    "explainer video"
+  "news": [
+    "election fraud debate",
+    "breaking news fact check",
+    "ben shapiro reaction",
+    "US supreme court explained",
+    "presidential debate highlights",
+    "trump indictment news",
+    "israel palestine explained",
+    "ukraine war analysis",
+    "current events explained"
+  ],
+  "science": [
+    "how the universe works",
+    "scientific myths debunked",
+    "physics explained simply",
+    "biology crash course",
+    "deep learning tutorial",
+    "explaining black holes",
+    "how vaccines work",
+    "psychology explained",
+    "top 10 science facts"
   ],
   "podcasts": [
-    "huberman podcast highlights",
-    "joe rogan",
-    "most viewed podcast interviews",
-    "deep podcast conversations"
+    "lex fridman interview",
+    "best episodes of h3 podcast",
+    "huberman lab podcast science",
+    "politics podcast debate",
+    "joe rogan controversial topics",
+    "sam harris podcast",
+    "popular tech podcasts",
+    "intellectual dark web discussions",
+    "famous podcast arguments"
   ],
-  "news_and_politics": [
-    "political commentary today",
-    "breaking news analysis",
-    "top political debates",
-    "history of US elections"
+  "history": [
+    "fall of roman empire documentary",
+    "cold war explained",
+    "american revolution summary",
+    "who started world war 1",
+    "timeline of human civilization",
+    "ancient civilizations uncovered",
+    "great depression history",
+    "famous historical speeches",
+    "social movements in the US"
   ],
-  "history_and_society": [
-    "ancient history explained",
-    "timeline of major events",
-    "world war 2 documentary",
-    "civilizations that disappeared"
-  ],
-  "economy_and_finance": [
-    "market analysis today",
-    "inflation explained",
-    "why recessions happen",
-    "how the economy works"
+  "economy": [
+    "what causes inflation",
+    "crypto crash explained",
+    "federal reserve policy analysis",
+    "great recession documentary",
+    "is capitalism broken",
+    "billionaire financial advice",
+    "top 10 investing myths",
+    "macroeconomics simplified",
+    "stock market manipulation explained"
   ]
-} 
+}

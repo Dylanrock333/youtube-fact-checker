@@ -228,7 +228,7 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
         # Combine all information into a single, comprehensive prompt
         final_prompt = f"""
             You are an AI assistant tasked with generating twitter posts based on video content. 
-            Here is the information about the video and a set of claims extracted from it using my YouTube claim extractor app, that pulls the claims from the video transcript and formats them.. 
+            Here is the information about the video and a set of claims extracted from it using my YouTube claim extractor app, that pulls the claims from the video transcript and formats them.
             Use this context to generate a twitter post that is engaging and informative.
             The following is information about the video and claims extracted from it.
 
@@ -243,10 +243,11 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
             ---
 
             I want you to generate a twitter post and threads that is engaging.
-            I need a intro post that introduces the video, if there are people in the video, mention them. Make the first post clickbait and engaging. Add hashtags to the intro post.
-            claims should be in the format of a thread with a number title and timestamp. with the quote and claim and context to the quote.
-            Claims contex should be descriptive and provide enough context to the quote.
-            and a final post that is a call to action to try my app videoclaimcatcher.com helps people evaluate and learn more about the video. Have the link closer to the top of the post. This end post should be in the same themes as the post and claims.
+            I need a intro post that introduces the topics, if there are people in the video, mention them. Make the first post eye catching and engaging.
+            claims should be in the format of a thread with a number title and timestamp. with the quote and claim and context to the quote. Make sure there is a new line after the title and quote.
+            Post context should be descriptive and provide enough context to the quote. You can add information from diffrent claims to a single post as long as it is relevant to the post.
+            Post should be in the same themes as the video and claims and should also be engaging and informative. each post should have a specifit topic or point from the video and claims.
+            The final post should be a call to action to try my app videoclaimcatcher.com helps people evaluate and learn more about the video. Have the link closer to the top of the post. This end post should be in the same themes as the post and claims.
             
             Here is an example of the format:
             [START OF FORMAT]
@@ -263,7 +264,6 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
             From AGI timelines and GPT-5 to social media mistakes, hallucinating AIs, and even giant compute facilities…
 
             Here are 9 of the most interesting and surprising things he said 🧵👇
-            #AI #OpenAI #SamAltman #ChatGPT #TechNews 
             ---
             1. 🧠 AGI Yearly? (00:48)
 
@@ -284,10 +284,11 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
             🔗 https://videoclaimcatcher.com lets you drop in a YouTube link and get a fast, AI-powered breakdown of key statements, claims, and context.
 
             Perfect for researchers, educators, and curious minds. Try it free 👇
-            #edtech #AItools #YouTubeAnalysis #Productivity #OpenAI
             [END OF EXAMPLE]
             
             The post should match the themes and intesity of the video and claims. Post should be organized by timestamp.
+            Make post sound natural but engaging and informative and impactful.
+            
         """
         
         #logging.info(f"Final prompt: {final_prompt}")
