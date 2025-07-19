@@ -19,9 +19,7 @@ class DeepSearchRequest(BaseModel):
     selectedLanguage: str = "en"
     
 class PostGenerationRequest(BaseModel):
-    claims: List[Dict[str, Any]]
-    video_data: Dict[str, Any]
-    prompt: str
+    prompt: str 
     
 class ClaimResponse(BaseModel):
     title: str

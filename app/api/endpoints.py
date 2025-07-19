@@ -147,98 +147,18 @@ async def get_recent_analytics(
 @limiter.limit("50/hour")
 async def gemini_generate(payload: PostGenerationRequest, request: Request):
     """
-    Constructs a prompt from video data and claims, then calls Gemini to generate a response.
+    Accepts a pre-constructed prompt from the frontend and calls Gemini to generate a response.
     """
     limitter_logger(request, "gemini_generate")
     start_time = time.time()
     
     try:
-        # --- Construct a detailed prompt for Gemini ---
-        video_info_parts = [f"- {key.replace('_', ' ').title()}: {value}" for key, value in payload.video_data.items()]
-        video_info_str = "\n".join(video_info_parts)
-        
-        claims_str_parts = []
-        for i, claim in enumerate(payload.claims):
-            claim_details = (
-                f"  - Title: {claim.get('title', 'N/A')}\n"
-                f"  - Quote: \"{claim.get('quote', 'N/A')}\"\n"
-                f"  - Context: \"{claim.get('context', 'N/A')}\"\n"
-                f"  - Timestamp: {claim.get('timestamp', 'N/A')}\n"
-                f"  - Category: {claim.get('category', 'N/A')}\n"
-                f"  - Controversy Score: {claim.get('controversy_score', 'N/A')}\n"
-                f"  - Search Query: {claim.get('search_query', 'N/A')}\n"
-            )
-            claims_str_parts.append(f"Claim {i+1}:\n{claim_details}")
-        claims_str = "\n\n".join(claims_str_parts)
-
-        # Combine all information into a single, comprehensive prompt
-        final_prompt = f"""
-            You are an AI assistant tasked with generating twitter posts based on video content. 
-            Here is the information about the video and a set of claims extracted from it using my YouTube claim extractor app, that pulls the claims from the video transcript and formats them.. 
-            Use this context to generate a twitter post that is engaging and informative.
-            The following is information about the video and claims extracted from it.
-
-            --- VIDEO INFORMATION ---
-            {video_info_str}
-
-            --- SELECTED CLAIMS FROM THE VIDEO ---
-            {claims_str}
-
-            --- USER'S REQUEST THEMES OF THE POST ---
-            {payload.prompt}
-            ---
-
-            I want you to generate a twitter post and threads that is engaging.
-            I need a intro post that introduces the video, if there are people in the video, mention them. Make the first post clickbait and engaging. Add hashtags to the intro post.
-            claims should be in the format of a thread with a number title and timestamp. with the quote and claim and context to the quote.
-            Claims contex should be descriptive and provide enough context to the quote.
-            and a final post that is a call to action to try my app videoclaimcatcher.com helps people evaluate and learn more about the video. Have the link closer to the top of the post. This end post should be in the same themes as the post and claims.
-            
-            Here is an example of the format:
-            [START OF FORMAT]
-            1.*ONLY ONE EMOJI* THREAD TITLE (Timestamp)
-            quote
-            claim and context to the quote
-            [END OF FORMAT]
-            
-            Here is an example:
-            [START OF EXAMPLE]
-            ---
-            🚨 Sam Altman just dropped a ton of 🔥 insights in the first episode of OpenAI’s new podcast.
-
-            From AGI timelines and GPT-5 to social media mistakes, hallucinating AIs, and even giant compute facilities…
-
-            Here are 9 of the most interesting and surprising things he said 🧵👇
-            #AI #OpenAI #SamAltman #ChatGPT #TechNews 
-            ---
-            1. 🧠 AGI Yearly? (00:48)
-
-            “I think more and more people will think we’ve gotten to an AGI system every year.”
-
-            Each year, AI improves so quickly that public perception is shifting. Altman suggests we may start declaring AGI annually — not because AI is AGI, but because the definition keeps moving forward.
-            ---
-            ...
-            ---
-            9. ⚗️ AI & Drug Discovery (35:20)
-
-            “We already have existing drugs… but with a couple of small modifications, we are very close to something great.”
-
-            Altman believes AI could unlock hidden uses of existing medicines — a silent revolution in pharma powered by large models and data reinterpretation.
-            ---
-            Want to dig deeper into this video or analyze other interviews for claims and insights?
-
-            🔗 https://videoclaimcatcher.com lets you drop in a YouTube link and get a fast, AI-powered breakdown of key statements, claims, and context.
-
-            Perfect for researchers, educators, and curious minds. Try it free 👇
-            #edtech #AItools #YouTubeAnalysis #Productivity #OpenAI
-            [END OF EXAMPLE]
-            
-            The post should match the themes and intesity of the video and claims. Post should be organized by timestamp.
-        """
+        # The prompt is now fully constructed on the frontend
+        final_prompt = payload.prompt
         
         #logging.info(f"Final prompt: {final_prompt}")
         
-        # Call the Gemini agent with the newly constructed prompt
+        # Call the Gemini agent with the received prompt
         response = await call_gemini_agent(final_prompt)
         
         processing_time_seconds = round(time.time() - start_time, 2)
