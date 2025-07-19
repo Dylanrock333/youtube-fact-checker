@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
 import json
 from .claim_analysis.claim_extraction import process_video_claims, process_video_claims_stream
-from .agent import execute_web_search, tweet_generation_agent
+from .agent import execute_web_search, tweet_generation_agent, call_gemini_agent
 from app.config import get_settings
 from app.schemas import VideoExecutionRequest, DeepSearchRequest, PostGenerationRequest
 import logging
@@ -213,7 +213,7 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
         #logging.info(f"Final prompt: {final_prompt}")
         
         # Call the Gemini agent with the received prompt
-        response = await call_gemini_agent(final_prompt)
+        response = await call_gemini_agent(final_prompt)    
         
         processing_time_seconds = round(time.time() - start_time, 2)
         logging.info(f"Gemini generate endpoint completed in {processing_time_seconds}s")

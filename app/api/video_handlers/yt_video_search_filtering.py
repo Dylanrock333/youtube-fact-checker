@@ -30,14 +30,15 @@ async def classify_video_agent(config):
    # Prompt to guide the LLM
     final_prompt = """
 You are a content classifier helping curate videos for an app that extracts factual claims and assertions from YouTube videos.
-
+For each category chose a diverse set of videos. try not to choose the same channel for each category multiple times unless its a popular video.
+Try to move spam videos to the none category. 
 Given the metadata of each video, decide if it is suitable for inclusion in a claim-extraction app. If it is, classify it into one of the following categories:
 
 - "educational": Videos that explain scientific, technical, or academic topics (e.g., how things work, breakdowns, theories).
 - "podcasts": Long-form interviews or discussions, typically from recurring podcast hosts.
-- "news_and_politics": Content about elections, political analysis, government, or geopolitical current events.
-- "history_and_society": Videos about past events, civilizations, historical analysis, or social structures.
-- "economy_and_finance": Topics covering money, investing, economics, markets, inflation, etc.
+- "news": Content about elections, political analysis, government, or geopolitical current events.
+- "history": Videos about past events, civilizations, historical analysis, or social structures.
+- "economy": Topics covering money, investing, economics, markets, inflation, etc.
 - "none": If the video is not relevant (e.g., music, entertainment, prank, unstructured livestreams), classify it as "none".
 
 Only use one category per video. If it does not belong anywhere, mark it as "none".
