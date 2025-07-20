@@ -69,45 +69,35 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     
     IGNORE obviously true statements of common knowledge
     IGNORE opinions clearly framed as such ("I believe," "I think," etc.)
-    IGNORE opinions, hypotheticals, or personal preferences. 
+    IGNORE opinions, hypotheticals, sarcasm, or personal preferences. 
     IGNORE statements that are not presented as facts.
+    IGNORE potential ads or sponsored content.
     
     For each claim:
-        1. Generate a very short and simple title that summarizes the claim
-        2. Extract the exact quote containing the factual claim, including any qualifying phrases, supporting details, or
-        contextual elements that are part of the same thought or argument. This should be comprehensive enough to stand on its 
-        own for verification purposes.
-        3. Provide comprehensive context for the claim (4-6 sentences) that:
-            - Captures what led up to this statement in the video
-            - Provides necessary context from the surrounding discussion
-            - Explains the speaker's apparent purpose or intent when making the claim
-            - Notes any qualifiers the speaker used before or after the claim
-            - Includes relevant background information that helps understand why this claim was made
-        4. Note the timestamp where it appears
-        5. Categorize the claim in a single word (statistical, historical, scientific, legal, causal, political, etc.)
-        6. Rate the "controversy score" on a scale of 1-5:
+        1. 'title': Generate a very short and simple title that summarizes the claim (less than 10 words)
+        2. 'claim': Extract the exact quote from the transcript. Only include the text relevant to the claim. do not include any other text.
+        3. `context`: 1–3 sentences explaining:
+            - What led up to the claim
+            - Speaker’s intent and surrounding discussion
+            - Any qualifiers or background info
+            - Write in a clear, concise, and neutral tone. Use plain language. Keep it simple, informative, engaging and to the point.
+            - No jargon or filler. Avoid academic or overly technical language.
+        4. 'timestamp': Note the timestamp of the moment the claim is made
+        5. 'category': Categorize the claim in a single word (Statistical, Historical, Scientific, Legal, Causal, Political, etc.)
+        6. 'controversy_score': Rate the "controversy score" on a scale of 1-5:
             - 5: Highly controversial, directly contradicts established consensus
             - 4: Significantly surprising or questionable given available evidence
             - 3: Somewhat misleading or lacking important context
             - 2: Slightly oversimplified but not entirely wrong
             - 1: Potentially misleading framing of otherwise accurate information
-        7. Create an objective research query that will help substantiate the factual accuracy of this claim. Format it as a detailed research prompt that (3-4 sentences):
+        7. 'search_query': Create an objective research query that will help substantiate the factual accuracy of this claim. Format it as a detailed research prompt that (3-4 sentences):
             - Includes key elements of the claim that need verification
             - Provides necessary context from the surrounding discussion
             - Identifies potential sources or types of evidence that would confirm or refute the claim
             - Asks for an evaluation of supporting and contradicting evidence
             - Requests identification of any nuance, complexity, or qualifications missing from the original claim
         
-    Format your response as a JSON array of objects with these fields:
-    - title: A short and simple title that summarizes the claim stated as a question (less than 10 words)
-    - claim: The factual statement quoted from the transcript only 
-    - context: a summary of the context for the claim that explains the claim and the context leading up to it (3-5 sentences)
-    - timestamp: The timestamp from the transcript (HH:MM:SS)
-    - category: Type of claim
-    - controversy_score: Numeric rating (1-5)
-    - search_query: A detailed search query for verification of the claim (3-4 sentences)
-     
-    ...
+    Return your output as a JSON array with one object per claim
     
     VIDEO INFO:
     - title: {video_data["title"]}
@@ -115,7 +105,7 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     - account_name: {video_data["channel_title"]}
     - published_at: {video_data["published_at"]}
     
-    TRANSCRIPT:
+    VIDEO TRANSCRIPT:
     {transcript_text}
     """
     
