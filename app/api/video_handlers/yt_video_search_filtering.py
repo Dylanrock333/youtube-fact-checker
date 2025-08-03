@@ -69,9 +69,9 @@ Respond only with a JSON array where each element has:
                     "enum": [
                         "educational",
                         "podcasts",
-                        "news_and_politics",
-                        "history_and_society",
-                        "economy_and_finance",
+                        "news",
+                        "history",
+                        "economy",
                         "none"
                     ]
                 }
@@ -123,9 +123,9 @@ Respond only with a JSON array where each element has:
     video_claims_classified = {
         "educational": [],
         "podcasts": [],
-        "news_and_politics": [],
-        "history_and_society": [],
-        "economy_and_finance": []
+        "news": [],
+        "history": [],
+        "economy": []
     }
     # Process claims for videos in each category
     for category, videos in classified_videos.items():
@@ -170,9 +170,9 @@ def classify_videos(all_results, list_of_videos):
     categorized_videos = {
         "educational": [],
         "podcasts": [],
-        "news_and_politics": [],
-        "history_and_society": [],
-        "economy_and_finance": []
+        "news": [],
+        "history": [],
+        "economy": []
     }
     
     # Count statistics
@@ -217,9 +217,9 @@ async def get_final_front_page_videos(classified_videos):
     final_front_page_videos = {
         "educational": [],
         "podcasts": [],
-        "news_and_politics": [],
-        "history_and_society": [],
-        "economy_and_finance": []
+        "news": [],
+        "history": [],
+        "economy": []
     }
     logging.info(f"Getting cleaning and filtering front page videos for {len(classified_videos)} categories")
     for category, videos in classified_videos.items():
