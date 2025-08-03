@@ -21,7 +21,7 @@ settings = get_settings()
 gemini_client = genai.Client(api_key=settings.google_gemini_api_key)
 
 #GEMINI_MODEL = "gemini-2.5-flash" # INPUT: $0.30 per 1M tokens, OUTPUT: $2.50 per 1M tokens (Great results, output is extensive) 1:06 min for 3hr 167 claims
-GEMINI_MODEL = "gemini-2.5-flash-lite-preview-06-17" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.40 per 1M tokens (Good results, cheaper, faster) 27 sec for 3hr 117 claims
+GEMINI_MODEL = "gemini-2.5-flash-lite" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.40 per 1M tokens (Good results, cheaper, faster) 27 sec for 3hr 117 claims
 
 #GEMINI_MODEL = "gemini-2.5-pro" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Best results, super slow, expensive) 1:40 min for 3hr 113 claims
 #GEMINI_MODEL = "gemini-2.0-flash" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.70 per 1M tokens (okay results, cheaper, faster, fewer claims) 26 sec for 3hr 78 claims
