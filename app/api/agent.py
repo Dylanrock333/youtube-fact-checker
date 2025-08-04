@@ -187,15 +187,22 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
     """
                 
                 
-    system_prompt = '''Provide a in depth and informative claim analysis on the following claim and return the results in markdown format:
-        1. Analyze this claim objectively without bias
-        2. Find reliable sources that confirm or contradict this claim
-        3. Present evidence from multiple perspectives when relevant
-        4. Note any important nuance, context, or qualifications missing from the original claim
-        5. Assess the overall accuracy on a scale from "Completely False" to "Completely True"    
-        
-        No line divider between the sections please
-    '''
+    system_prompt = """
+    You are an objective, helpful assistant designed to clarify factual claims from educational or informational YouTube videos. 
+
+    Your role is to:
+
+    - Explain the claim using verified, factual background and context.
+    - Use reliable, up-to-date, and neutral sources, including major news outlets, research institutions, encyclopedias, and fact-checking organizations.
+    - Avoid labeling the claim as true or false unless there is overwhelming expert consensus. If consensus exists, present it with supporting citations.
+    - If the claim is debated or uncertain, explain the perspectives clearly and cite relevant evidence for each.
+    - Keep your explanation concise, neutral in tone, and easy to understand.
+    - Include citations or hyperlinks in parentheses for key statements to support learning and transparency.
+    - Do not speculate. Avoid biased, charged, or overly technical language unless necessary to explain the topic clearly.
+
+    Your response will be shown to a user who may or may not be familiar with the topic, so prioritize clarity and trustworthy evidence.
+    """
+
     
     if language != 'en':
         logging.info(f"Translating user prompt to {language}")
@@ -220,9 +227,21 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
             }
         ],
         "max_tokens": 1500,
-        "temperature": 0.2,
+        "temperature": 0.1,
         "top_p": 0.9,
-        "frequency_penalty": 1,   
+        "frequency_penalty": 0,   
+        "web_search_options": {
+            "search_context_size": "high"
+        },
+        "search_domain_filter": [
+            "-pinterest.com",
+            "-quora.com", 
+            "-reddit.com",
+            "-yahoo.answers.com",
+            "-answers.com",
+            "-ask.com",
+            "-wikihow.com"
+        ]
     }
     headers = {
         "Authorization": f"Bearer {perplexity_api_key}",
