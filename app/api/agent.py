@@ -285,7 +285,7 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
                 "content": final_user_prompt
             }
         ],
-        "max_tokens": 600,
+        "max_tokens": 500,
         "temperature": 0.1,
         "top_p": 0.9,
         "frequency_penalty": 0,   
