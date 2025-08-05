@@ -260,6 +260,10 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
     When the content is explanatory or factual, focus on clear, direct language. Prioritize tone-matching, clarity, and flow over strict labels.
     
     Use simple language, clear headings for each section, short paragraphs, and bullet points. Remove excess citations and academic tone. Make it easy to skim.
+    
+    Please respond in Markdown format with clear headings and bullet points.
+    
+    When responding, organize the explanation using concise, relevant section headings to break up information. Use 2–4 clear, short headings per response. Only add a heading if it helps users follow the flow — avoid unnecessary or repetitive headers. Use plain, intuitive language in headers, such as “Background,” “What Experts Say,” “Points to Consider,” or “Key Takeaways.
     """
 
     
