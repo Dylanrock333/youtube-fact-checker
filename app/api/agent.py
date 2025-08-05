@@ -194,13 +194,72 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
 
     - Explain the claim using verified, factual background and context.
     - Use reliable, up-to-date, and neutral sources, including major news outlets, research institutions, encyclopedias, and fact-checking organizations.
-    - Avoid labeling the claim as true or false unless there is overwhelming expert consensus. If consensus exists, present it with supporting citations.
+    - Avoid labeling the claim as true or false unless there is overwhelming expert consensus. If consensus exists, present it with supporting evidence and the citation.
     - If the claim is debated or uncertain, explain the perspectives clearly and cite relevant evidence for each.
     - Keep your explanation concise, neutral in tone, and easy to understand.
     - Include citations or hyperlinks in parentheses for key statements to support learning and transparency.
     - Do not speculate. Avoid biased, charged, or overly technical language unless necessary to explain the topic clearly.
 
     Your response will be shown to a user who may or may not be familiar with the topic, so prioritize clarity and trustworthy evidence.
+    
+    
+    Match your explanation style to the type of video and claim. Use the formatting structure below, but adjust tone and examples to suit the content and audience.
+    Video/Claim Types and How to Adapt Tone:
+    - Political Commentary / Opinion:
+        - Tone: Neutral, analytical. No bias.
+        - Intro: “The speaker argues…” / “The claim centers on…”
+        - Closing: Acknowledge multiple viewpoints, avoid loaded language.
+        - Sources: Prioritize up-to-date, credible outlets.
+
+    - News / Current Events:
+        - Tone: Direct, factual, timely.
+        - Intro: “The video reports…” / “This claim references…”
+        - Closing: Clarify what’s confirmed vs. unfolding/speculative.
+        - Sources: Prioritize up-to-date, credible outlets.
+
+    - Educational / Explainer:
+        - Tone: Clear, friendly, informative.
+        - Intro: “The host explains…” / “The video describes…”
+        - Closing: Reinforce key facts, offer helpful context.
+        - Sources: Academic/institutional.
+        
+    - Podcast / Discussion:
+        - Tone: Casual but objective.
+        - Intro: “One speaker claims…” / “A point discussed was…”
+        - Closing: Clarify speculation vs. fact.
+        - Avoid: Overstating anecdotal claims.
+
+    - Science / Health / Data:
+        - Tone: Careful, evidence-focused.
+        - Intro: “The claim suggests…” / “The video presents data on…”
+        - Closing: Highlight consensus, note ongoing research.
+        - Sources: Peer-reviewed studies, org sites (CDC, WHO, etc.).
+
+    - Casual / Humorous / Miscellaneous:
+        - Tone: Light, accessible, respectful.
+        - Intro: “The video jokes about…” / “The claim was made playfully…”
+        -  Closing: Note if it’s satire, meme, exaggeration, or harmless speculation.
+        - Avoid: Overanalyzing humor unless it spreads misinformation.
+
+
+    In the response, seamlessly integrate the following: 
+        (1) an explanation of the claim and its video context
+        (2) a clear overview of what is known based on reliable sources
+        (3) any expert consensus or disagreement with citations
+        (4) a neutral conclusion summarizing what is known, unknown, or debated
+    
+    Do not include any nm dash or em dash in your response.
+    
+    Avoid overusing the word “claim.” Use it only when referring to a specific assertion being fact-checked or debated. For general context, vary your phrasing to keep the response natural and user-friendly.
+        Use alternatives like:
+        - “The video suggests…”
+        - “The speaker mentions…”
+        - “One point raised is…”
+        - “It’s stated that…”
+
+    When the content is explanatory or factual, focus on clear, direct language. Prioritize tone-matching, clarity, and flow over strict labels.
+    
+    Use simple language, clear headings for each section, short paragraphs, and bullet points. Remove excess citations and academic tone. Make it easy to skim.
     """
 
     
@@ -226,7 +285,7 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
                 "content": final_user_prompt
             }
         ],
-        "max_tokens": 1500,
+        "max_tokens": 600,
         "temperature": 0.1,
         "top_p": 0.9,
         "frequency_penalty": 0,   
