@@ -1,4 +1,4 @@
-{
+[{
   "news": [
     "election fraud debate",
     "breaking news fact check",
@@ -54,4 +54,64 @@
     "macroeconomics simplified",
     "stock market manipulation explained"
   ]
-}
+},
+
+
+
+{
+  "news": [
+    "Biden new policy announcements",
+    "Trump 2024 campaign updates",
+    "Global climate change summit 2024",
+    "AI regulation news",
+    "US China relations explained",
+    "Russia Ukraine war latest",
+    "Middle East conflict update",
+    "US economy inflation report",
+    "Major tech company antitrust lawsuits"
+  ],
+  "science": [
+    "James Webb Telescope new discoveries",
+    "CRISPR gene editing breakthroughs 2024",
+    "Fusion energy progress",
+    "New exoplanet discoveries",
+    "Quantum computing explained",
+    "Latest advancements in battery technology",
+    "mRNA vaccine research updates",
+    "Human brain mapping project",
+    "Microplastics in human body research"
+  ],
+  "podcasts": [
+    "The Daily podcast",
+    "NPR Planet Money",
+    "This American Life episodes",
+    "The All-In Podcast",
+    "Andrew Schulz's Flagrant 2",
+    "Theo Von This Past Weekend",
+    "SmartLess podcast",
+    "Darknet Diaries",
+    "The Moth Podcast"
+  ],
+  "history": [
+    "The Silk Road history",
+    "History of the Ottoman Empire",
+    "The Protestant Reformation explained",
+    "The French Revolution documentary",
+    "History of Japan's Edo period",
+    "The Scramble for Africa",
+    "Cuban Missile Crisis summary",
+    "The Russian Revolution",
+    "Ancient Egypt's Old Kingdom"
+  ],
+  "economy": [
+    "Federal Reserve interest rate decision",
+    "US housing market trends 2024",
+    "Global supply chain issues",
+    "The future of cryptocurrency regulation",
+    "Nvidia stock analysis",
+    "Retirement planning in high inflation",
+    "Venture capital trends 2024",
+    "Impact of sanctions on Russia's economy",
+    "China's real estate crisis explained"
+  ]
+}]

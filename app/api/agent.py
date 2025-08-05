@@ -350,17 +350,41 @@ def filter_and_clean_claims_agent(claim_list, video_data, video_id):
     
     
         
-    response = gemini_client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=full_prompt,
-        config={
-            'response_mime_type': 'application/json',
-            'response_schema': list[ClaimResponse],
-        }
-    )
+    max_retries = 3
+    claims = []
     
-    response_text = response.text
-    claims = json.loads(response_text)
+    for attempt in range(max_retries):
+        try:
+            response = gemini_client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=full_prompt,
+                config={
+                    'response_mime_type': 'application/json',
+                    'response_schema': list[ClaimResponse],
+                }
+            )
+            
+            response_text = response.text
+            claims = json.loads(response_text)
+            # If we get here, the JSON parsing was successful
+            break
+            
+        except json.JSONDecodeError as e:
+            logging.warning(f"JSON parsing failed on attempt {attempt + 1}/{max_retries} in filter_and_clean_claims_agent: {e}")
+            if attempt == max_retries - 1:  # Last attempt
+                logging.error(f"Failed to parse JSON response after {max_retries} attempts")
+                logging.error(f"Raw response: {response_text}")
+                claims = []
+            else:
+                logging.info(f"Retrying API call (attempt {attempt + 2}/{max_retries})")
+                
+        except Exception as e:
+            logging.warning(f"API call failed on attempt {attempt + 1}/{max_retries}: {e}")
+            if attempt == max_retries - 1:  # Last attempt
+                logging.error(f"Failed to call Gemini API after {max_retries} attempts: {e}")
+                claims = []
+            else:
+                logging.info(f"Retrying API call (attempt {attempt + 2}/{max_retries})")
     
     return_dict = {
         "video_id": video_id,
