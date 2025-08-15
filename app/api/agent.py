@@ -21,7 +21,7 @@ settings = get_settings()
 gemini_client = genai.Client(api_key=settings.google_gemini_api_key)
 
 #GEMINI_MODEL = "gemini-2.5-flash" # INPUT: $0.30 per 1M tokens, OUTPUT: $2.50 per 1M tokens (Great results, output is extensive) 1:06 min for 3hr 167 claims
-GEMINI_MODEL = "gemini-2.5-flash-lite-preview-06-17" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.40 per 1M tokens (Good results, cheaper, faster) 27 sec for 3hr 117 claims
+GEMINI_MODEL = "gemini-2.5-flash-lite" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.40 per 1M tokens (Good results, cheaper, faster) 27 sec for 3hr 117 claims
 
 #GEMINI_MODEL = "gemini-2.5-pro" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Best results, super slow, expensive) 1:40 min for 3hr 113 claims
 #GEMINI_MODEL = "gemini-2.0-flash" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.70 per 1M tokens (okay results, cheaper, faster, fewer claims) 26 sec for 3hr 78 claims
@@ -69,45 +69,35 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     
     IGNORE obviously true statements of common knowledge
     IGNORE opinions clearly framed as such ("I believe," "I think," etc.)
-    IGNORE opinions, hypotheticals, or personal preferences. 
+    IGNORE opinions, hypotheticals, sarcasm, or personal preferences. 
     IGNORE statements that are not presented as facts.
+    IGNORE potential ads or sponsored content.
     
     For each claim:
-        1. Generate a very short and simple title that summarizes the claim
-        2. Extract the exact quote containing the factual claim, including any qualifying phrases, supporting details, or
-        contextual elements that are part of the same thought or argument. This should be comprehensive enough to stand on its 
-        own for verification purposes.
-        3. Provide comprehensive context for the claim (4-6 sentences) that:
-            - Captures what led up to this statement in the video
-            - Provides necessary context from the surrounding discussion
-            - Explains the speaker's apparent purpose or intent when making the claim
-            - Notes any qualifiers the speaker used before or after the claim
-            - Includes relevant background information that helps understand why this claim was made
-        4. Note the timestamp where it appears
-        5. Categorize the claim in a single word (statistical, historical, scientific, legal, causal, political, etc.)
-        6. Rate the "controversy score" on a scale of 1-5:
+        1. 'title': Generate a very short and simple title that summarizes the claim (less than 10 words)
+        2. 'claim': Extract the exact quote from the transcript. Only include the text relevant to the claim. do not include any other text.
+        3. `context`: 1–3 sentences explaining:
+            - What led up to the claim
+            - Speaker’s intent and surrounding discussion
+            - Any qualifiers or background info
+            - Write in a clear, concise, and neutral tone. Use plain language. Keep it simple, informative, engaging and to the point.
+            - No jargon or filler. Avoid academic or overly technical language.
+        4. 'timestamp': Note the timestamp of the moment the claim is made
+        5. 'category': Categorize the claim in a single word (Statistical, Historical, Scientific, Legal, Causal, Political, etc.)
+        6. 'controversy_score': Rate the "controversy score" on a scale of 1-5:
             - 5: Highly controversial, directly contradicts established consensus
             - 4: Significantly surprising or questionable given available evidence
             - 3: Somewhat misleading or lacking important context
             - 2: Slightly oversimplified but not entirely wrong
             - 1: Potentially misleading framing of otherwise accurate information
-        7. Create an objective research query that will help substantiate the factual accuracy of this claim. Format it as a detailed research prompt that (3-4 sentences):
+        7. 'search_query': Create an objective research query that will help substantiate the factual accuracy of this claim. Format it as a detailed research prompt that (3-4 sentences):
             - Includes key elements of the claim that need verification
             - Provides necessary context from the surrounding discussion
             - Identifies potential sources or types of evidence that would confirm or refute the claim
             - Asks for an evaluation of supporting and contradicting evidence
             - Requests identification of any nuance, complexity, or qualifications missing from the original claim
         
-    Format your response as a JSON array of objects with these fields:
-    - title: A short and simple title that summarizes the claim stated as a question (less than 10 words)
-    - claim: The factual statement quoted from the transcript only 
-    - context: a summary of the context for the claim that explains the claim and the context leading up to it (3-5 sentences)
-    - timestamp: The timestamp from the transcript (HH:MM:SS)
-    - category: Type of claim
-    - controversy_score: Numeric rating (1-5)
-    - search_query: A detailed search query for verification of the claim (3-4 sentences)
-     
-    ...
+    Return your output as a JSON array with one object per claim
     
     VIDEO INFO:
     - title: {video_data["title"]}
@@ -115,7 +105,7 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     - account_name: {video_data["channel_title"]}
     - published_at: {video_data["published_at"]}
     
-    TRANSCRIPT:
+    VIDEO TRANSCRIPT:
     {transcript_text}
     """
     
@@ -197,15 +187,85 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
     """
                 
                 
-    system_prompt = '''Provide a in depth and informative claim analysis on the following claim and return the results in markdown format:
-        1. Analyze this claim objectively without bias
-        2. Find reliable sources that confirm or contradict this claim
-        3. Present evidence from multiple perspectives when relevant
-        4. Note any important nuance, context, or qualifications missing from the original claim
-        5. Assess the overall accuracy on a scale from "Completely False" to "Completely True"    
+    system_prompt = """
+    You are an objective, helpful assistant designed to clarify factual claims from educational or informational YouTube videos. 
+
+    Your role is to:
+
+    - Explain the claim using verified, factual background and context.
+    - Use reliable, up-to-date, and neutral sources, including major news outlets, research institutions, encyclopedias, and fact-checking organizations.
+    - Avoid labeling the claim as true or false unless there is overwhelming expert consensus. If consensus exists, present it with supporting evidence and the citation.
+    - If the claim is debated or uncertain, explain the perspectives clearly and cite relevant evidence for each.
+    - Keep your explanation concise, neutral in tone, and easy to understand.
+    - Include citations or hyperlinks in parentheses for key statements to support learning and transparency.
+    - Do not speculate. Avoid biased, charged, or overly technical language unless necessary to explain the topic clearly.
+
+    Your response will be shown to a user who may or may not be familiar with the topic, so prioritize clarity and trustworthy evidence.
+    
+    
+    Match your explanation style to the type of video and claim. Use the formatting structure below, but adjust tone and examples to suit the content and audience.
+    Video/Claim Types and How to Adapt Tone:
+    - Political Commentary / Opinion:
+        - Tone: Neutral, analytical. No bias.
+        - Intro: “The speaker argues…” / “The claim centers on…”
+        - Closing: Acknowledge multiple viewpoints, avoid loaded language.
+        - Sources: Prioritize up-to-date, credible outlets.
+
+    - News / Current Events:
+        - Tone: Direct, factual, timely.
+        - Intro: “The video reports…” / “This claim references…”
+        - Closing: Clarify what’s confirmed vs. unfolding/speculative.
+        - Sources: Prioritize up-to-date, credible outlets.
+
+    - Educational / Explainer:
+        - Tone: Clear, friendly, informative.
+        - Intro: “The host explains…” / “The video describes…”
+        - Closing: Reinforce key facts, offer helpful context.
+        - Sources: Academic/institutional.
         
-        No line divider between the sections please
-    '''
+    - Podcast / Discussion:
+        - Tone: Casual but objective.
+        - Intro: “One speaker claims…” / “A point discussed was…”
+        - Closing: Clarify speculation vs. fact.
+        - Avoid: Overstating anecdotal claims.
+
+    - Science / Health / Data:
+        - Tone: Careful, evidence-focused.
+        - Intro: “The claim suggests…” / “The video presents data on…”
+        - Closing: Highlight consensus, note ongoing research.
+        - Sources: Peer-reviewed studies, org sites (CDC, WHO, etc.).
+
+    - Casual / Humorous / Miscellaneous:
+        - Tone: Light, accessible, respectful.
+        - Intro: “The video jokes about…” / “The claim was made playfully…”
+        -  Closing: Note if it’s satire, meme, exaggeration, or harmless speculation.
+        - Avoid: Overanalyzing humor unless it spreads misinformation.
+
+
+    In the response, seamlessly integrate the following: 
+        (1) an explanation of the claim and its video context
+        (2) a clear overview of what is known based on reliable sources
+        (3) any expert consensus or disagreement with citations
+        (4) a neutral conclusion summarizing what is known, unknown, or debated
+    
+    Do not include any nm dash or em dash in your response.
+    
+    Avoid overusing the word “claim.” Use it only when referring to a specific assertion being fact-checked or debated. For general context, vary your phrasing to keep the response natural and user-friendly.
+        Use alternatives like:
+        - “The video suggests…”
+        - “The speaker mentions…”
+        - “One point raised is…”
+        - “It’s stated that…”
+
+    When the content is explanatory or factual, focus on clear, direct language. Prioritize tone-matching, clarity, and flow over strict labels.
+    
+    Use simple language, clear headings for each section, short paragraphs, and bullet points. Remove excess citations and academic tone. Make it easy to skim.
+    
+    Please respond in Markdown format with clear headings and bullet points.
+    
+    When responding, organize the explanation using concise, relevant section headings to break up information. Use 2–4 clear, short headings per response. Only add a heading if it helps users follow the flow — avoid unnecessary or repetitive headers. Use plain, intuitive language in headers, such as “Background,” “What Experts Say,” “Points to Consider,” or “Key Takeaways.
+    """
+
     
     if language != 'en':
         logging.info(f"Translating user prompt to {language}")
@@ -229,10 +289,22 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
                 "content": final_user_prompt
             }
         ],
-        "max_tokens": 1500,
-        "temperature": 0.2,
+        "max_tokens": 500,
+        "temperature": 0.1,
         "top_p": 0.9,
-        "frequency_penalty": 1,   
+        "frequency_penalty": 0,   
+        "web_search_options": {
+            "search_context_size": "high"
+        },
+        "search_domain_filter": [
+            "-pinterest.com",
+            "-quora.com", 
+            "-reddit.com",
+            "-yahoo.answers.com",
+            "-answers.com",
+            "-ask.com",
+            "-wikihow.com"
+        ]
     }
     headers = {
         "Authorization": f"Bearer {perplexity_api_key}",

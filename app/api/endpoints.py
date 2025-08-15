@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, Request, Depends
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, Request, Depends, Header
+from fastapi.responses import StreamingResponse, JSONResponse
 import json
 from .claim_analysis.claim_extraction import process_video_claims, process_video_claims_stream
 from .agent import execute_web_search, tweet_generation_agent, call_gemini_agent
@@ -196,6 +196,26 @@ async def get_recent_analytics(
 ):
     """Get recent video processing analytics."""
     return analytics_db.get_recent_videos(limit)
+
+@router.post("/analytics/clear", tags=["Analytics"])
+async def clear_analytics(
+    request: Request,
+    x_secret_key: str = Header(None),
+    analytics_db=Depends(get_analytics_db)
+):
+    """Clear all video processing analytics from the database."""
+    settings = get_settings()
+    
+    # Secure this endpoint with a secret key
+    if x_secret_key != settings.secret_key:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+        
+    try:
+        analytics_db.reset_database()
+        return JSONResponse(status_code=200, content={"message": "Analytics database cleared successfully."})
+    except Exception as e:
+        logging.error(f"Failed to clear analytics database: {e}")
+        raise HTTPException(status_code=500, detail="Failed to clear analytics database.")
 
 @router.post("/post/generate", tags=["Gemini"])
 @limiter.limit("50/hour")

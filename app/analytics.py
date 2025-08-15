@@ -118,3 +118,20 @@ class AnalyticsDB:
         except Exception as e:
             logging.error(f"Error retrieving analytics: {e}")
             return []
+
+    def reset_database(self):
+        """Drops the video_analytics table and re-initializes it."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute('DROP TABLE IF EXISTS video_analytics')
+            conn.commit()
+            conn.close()
+            logging.info("video_analytics table dropped successfully.")
+            
+            # Recreate the table by calling the initialization method
+            self._initialize_db()
+        except Exception as e:
+            logging.error(f"Error resetting analytics database: {e}")
+            raise

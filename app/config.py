@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     webshare_password: str
     webshare_proxy_host: str = "p.webshare.io"  # Default value, adjust as needed
     webshare_proxy_port: int = 80  # Default value, adjust as needed
+    secret_key: str
     environment: str = "dev"
     frontend_url: str = "https://youtube-fact-chekcer-ui.onrender.com"
     
