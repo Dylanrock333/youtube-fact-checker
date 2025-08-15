@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = 'utf-8'
+        extra = "ignore"  # Ignore extra fields that are not defined in the model
 
 @lru_cache()
 def get_settings():
