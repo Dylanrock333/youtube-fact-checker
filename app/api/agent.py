@@ -76,7 +76,7 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     For each claim:
         1. 'title': Generate a very short and simple title that summarizes the claim (less than 10 words)
         2. 'claim': Extract the exact quote from the transcript. Only include the text relevant to the claim. do not include any other text.
-        3. `context`: 1–3 sentences explaining:
+        3. `context`: 1–2 sentences explaining:
             - What led up to the claim
             - Speaker’s intent and surrounding discussion
             - Any qualifiers or background info
