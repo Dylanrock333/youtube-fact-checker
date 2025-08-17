@@ -265,7 +265,10 @@ def parse_duration_to_minutes(duration_str):
 
 def parse_int(value):
     # Safely parses int from string like "475,000"
-    return int(re.sub(r"[^\d]", "", str(value)))
+    if not value or str(value).strip() == "":
+        return 0
+    cleaned = re.sub(r"[^\d]", "", str(value))
+    return int(cleaned) if cleaned else 0
 
 def is_recent(published_at_str, days=3):
     # Checks if the video was published within the last `days`
