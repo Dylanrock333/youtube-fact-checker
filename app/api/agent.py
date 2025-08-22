@@ -266,6 +266,8 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
     Do not include any charts or graphs in your response.
     
     Keep in mind you have 600 tokens to work with so be concise and to the point and finish your response as if you had 550 tokens left.
+    
+    If calculations are required, summarize results only
     """
 
     
@@ -291,7 +293,7 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
                 "content": final_user_prompt
             }
         ],
-        "max_tokens": 600,
+        "max_tokens": 650,
         "temperature": 0.1,
         "top_p": 0.9,
         "frequency_penalty": 0,   
