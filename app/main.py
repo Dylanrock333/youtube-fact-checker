@@ -101,6 +101,8 @@ else:
         CORSMiddleware,
         allow_origins=[
             settings.frontend_url,
+            "https://www.verofyi.com",
+            "https://verofyi.com",
             "https://www.videoclaimcatcher.com",
             "https://videoclaimcatcher.com",
             "https://backdoor-1j4w.onrender.com",
