@@ -244,6 +244,23 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
         logging.error(f"Gemini generate endpoint failed after {processing_time_seconds}s: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/slideshow", tags=["Data"])
+async def get_slideshow():
+    """
+    Returns the slideshow JSON data from assets.
+    """
+    try:
+        with open("app/assets/res_slideshow.json", "r", encoding="utf-8") as file:
+            slideshow_data = json.load(file)
+        return slideshow_data
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Slideshow data not found")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Error parsing slideshow data")
+    except Exception as e:
+        logging.error(f"Error loading slideshow data: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 
 
 
