@@ -6,12 +6,8 @@ from youtube_transcript_api.proxies import WebshareProxyConfig
 from dotenv import load_dotenv
 import os
 import logging
-from app.api.video_handlers.translate import translate_full_prompt
 import re
 from datetime import datetime
-from babel.numbers import format_decimal
-from babel.dates import format_date
-from babel import Locale
 import time
 import yt_dlp
 import tempfile
@@ -39,6 +35,17 @@ ytt_api = YouTubeTranscriptApi(
     )
 )
 
+# Global YouTube API client to prevent memory leaks from creating new clients
+_youtube_client = None
+
+def get_youtube_client():
+    """Get or create the global YouTube API client."""
+    global _youtube_client
+    if _youtube_client is None:
+        google_yt_api_key = settings.google_yt_api_key
+        _youtube_client = googleapiclient.discovery.build('youtube', 'v3', developerKey=google_yt_api_key)
+    return _youtube_client
+
 def extract_transcript_YouTubeTranscriptApi(video_id: str) -> List[Dict[str, Any]]: # Updated return type hint
     """Retrieve transcript with timestamps and title from a YouTube video."""
     
@@ -51,7 +58,6 @@ def extract_transcript_YouTubeTranscriptApi(video_id: str) -> List[Dict[str, Any
 
             #TODO: Have a standart transcript format schema that is used for all video origins
             logging.info(f"Successfully retrieved transcript for video id: {video_id}")
-            #logging.info(f"formatted_transcript: {formatted_transcript}")
             return formatted_transcript
             
         except Exception as e:
@@ -72,8 +78,22 @@ def extract_transcript_YouTubeTranscriptApi(video_id: str) -> List[Dict[str, Any
             time.sleep(wait_time)
 
 
-# You can reuse this executor app-wide (best placed globally)
-executor = ThreadPoolExecutor(max_workers=4)  # Keep small for 0.5 CPU
+# Global executor with proper cleanup management
+_executor = None
+
+def get_executor():
+    """Get or create the global ThreadPoolExecutor."""
+    global _executor
+    if _executor is None:
+        _executor = ThreadPoolExecutor(max_workers=4)  # Keep small for 0.5 CPU
+    return _executor
+
+def shutdown_executor():
+    """Properly shutdown the global ThreadPoolExecutor."""
+    global _executor
+    if _executor is not None:
+        _executor.shutdown(wait=True)
+        _executor = None
 
 def _extract_transcript_yt_dlp(video_id: str) -> Optional[List[Dict[str, Any]]]:
     """Extract transcript with timestamps and title from a YouTube video using yt-dlp."""
@@ -177,7 +197,7 @@ def get_yt_transcript(video_id: str, timeout_seconds: int = 20) -> Optional[List
         else:
             logging.warning(f"YouTubeTranscriptApi failed for video: {video_id}")
             logging.info(f"Attempting to extract transcript with yt-dlp for video: {video_id}")
-            future = executor.submit(_extract_transcript_yt_dlp, video_id)
+            future = get_executor().submit(_extract_transcript_yt_dlp, video_id)
             result = future.result(timeout=timeout_seconds)
             if result:
                 return result
@@ -186,8 +206,6 @@ def get_yt_transcript(video_id: str, timeout_seconds: int = 20) -> Optional[List
                 return None
             
         
-        #logging.info(f"Transcript: {result}")
-        #return result
     except FuturesTimeoutError:
         logging.error(f"Timeout while fetching transcript for video: {video_id}")
         return None
@@ -196,10 +214,8 @@ def get_yt_transcript(video_id: str, timeout_seconds: int = 20) -> Optional[List
         return None
     
     
-async def get_yt_video_info(video_id, language):
-    settings = get_settings()
-    google_yt_api_key = settings.google_yt_api_key
-    youtube = googleapiclient.discovery.build('youtube', 'v3', developerKey=google_yt_api_key)
+async def get_yt_video_info(video_id):
+    youtube = get_youtube_client()  # Use the global reusable client
     
     logging.info(f"getting video info for video id: {video_id}")
     
@@ -254,13 +270,17 @@ async def get_yt_video_info(video_id, language):
     youtube_video_data["tags"] = youtube_video_info.get("tags")
     youtube_video_data["channel_title"] = youtube_video_info.get("channel_title")
     
-    # Format view count according to locale
+    # Format view count with default locale
     raw_view_count = youtube_video_info.get("view_count", 0)
-    youtube_video_data["view_count"] = format_view_count(int(raw_view_count), language)
+    youtube_video_data["view_count"] = f"{int(raw_view_count):,}"
     
-    # Format published date according to locale
+    # Format published date with default format
     raw_published_at = youtube_video_info.get("published_at", "")
-    youtube_video_data["published_at"] = format_published_date(raw_published_at, language)
+    try:
+        dt = datetime.fromisoformat(raw_published_at.replace('Z', '+00:00'))
+        youtube_video_data["published_at"] = dt.strftime('%Y-%m-%d')
+    except:
+        youtube_video_data["published_at"] = raw_published_at
     
     # Format duration to standard format
     raw_duration = youtube_video_info.get("duration", "")
@@ -271,43 +291,10 @@ async def get_yt_video_info(video_id, language):
     
     #TODO: Fix duration format 
     
-    try:
-        if language != 'en':            
-            logging.info(f"Translating title to {language}")
-            translated_title = await translate_full_prompt(youtube_video_info.get("title"), language)
-            youtube_video_data["title"] = translated_title
-        else:
-            youtube_video_data["title"] = youtube_video_info.get("title")
-        
-    except Exception as e:
-        logging.error(f"Error translating title: {e}")
-    
+    youtube_video_data["title"] = youtube_video_info.get("title")
 
     return youtube_video_data
 
-def format_view_count(view_count: int, language: str) -> str:
-    """Format view count according to locale conventions"""
-    try:
-        locale = Locale(language)
-        return format_decimal(view_count, locale=locale)
-    except:
-        # Fallback to English formatting
-        return f"{view_count:,}"
-
-def format_published_date(iso_date: str, language: str) -> str:
-    """Format published date according to locale conventions"""
-    try:
-        # Parse ISO 8601 date
-        dt = datetime.fromisoformat(iso_date.replace('Z', '+00:00'))
-        locale = Locale(language)
-        return format_date(dt, locale=locale)
-    except:
-        # Fallback to simple format
-        try:
-            dt = datetime.fromisoformat(iso_date.replace('Z', '+00:00'))
-            return dt.strftime('%Y-%m-%d')
-        except:
-            return iso_date
         
 def format_duration(iso_duration: str) -> str:
     """Convert ISO 8601 duration (PT10M30S) to standard format (10:30)"""

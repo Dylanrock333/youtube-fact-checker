@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request
 import uvicorn
 import sys
 import asyncio
+from contextlib import asynccontextmanager
 
 # # Platform-specific asyncio policy for Windows to avoid gRPC/HTTPX errors
 # if sys.platform == "win32":
@@ -51,10 +52,22 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle application lifecycle events."""
+    # Startup
+    yield
+    # Shutdown - cleanup resources to prevent memory leaks
+    from app.api.video_handlers.yt_handler import shutdown_executor
+    logging.info("Shutting down ThreadPoolExecutor...")
+    shutdown_executor()
+    logging.info("Application shutdown complete")
+
 app = FastAPI(
     title="YouTube Claims API",
     description="API for processing YouTube videos and extracting controversial claims",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 nltk.download('punkt')

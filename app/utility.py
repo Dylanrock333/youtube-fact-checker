@@ -25,6 +25,3 @@ def limitter_logger(request: Request, endpoint: str):
         logging.debug(f"Rate limit info structure: {request.state.view_rate_limit}")
     
 
-# # Function to get the limiter (optional, but can be useful for consistency)
-# def get_limiter() -> Limiter:
-#     return limiter

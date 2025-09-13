@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, Depends, Header
 from fastapi.responses import StreamingResponse, JSONResponse
 import json
-from .claim_analysis.claim_extraction import process_video_claims, process_video_claims_stream
+from .claim_analysis.claim_extraction import process_video_claims_stream
 from .agent import execute_web_search, call_gemini_agent
 from app.config import get_settings
 from app.schemas import VideoExecutionRequest, DeepSearchRequest, PostGenerationRequest
@@ -38,7 +38,7 @@ async def execute_stream(
     async def event_generator():
         video_data_from_processing = {}
         try:
-            async for update in process_video_claims_stream(payload.videoID, payload.origin, payload.selectedLanguage):
+            async for update in process_video_claims_stream(payload.videoID, payload.origin):
                 yield f"data: {json.dumps(update)}\n\n"
                 
                 if update.get("status") == "complete":
@@ -111,7 +111,6 @@ async def deepsearch(payload: DeepSearchRequest, request: Request):
             context=payload.context,
             video_data=video_data,
             query=payload.query,
-            language=payload.selectedLanguage
         )
         
         # Calculate processing time
@@ -121,7 +120,6 @@ async def deepsearch(payload: DeepSearchRequest, request: Request):
         logging.info(f"Deepsearch endpoint completed in {processing_time_seconds}s for claim: {payload.claimText[:50]}...")
         
         # Log the response for debugging
-       # logging.info("Response from execute_web_search:", response)
         
         return response
 
@@ -176,7 +174,6 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
         # The prompt is now fully constructed on the frontend
         final_prompt = payload.prompt
         
-        #logging.info(f"Final prompt: {final_prompt}")
         
         # Call the Gemini agent with the received prompt
         response = await call_gemini_agent(final_prompt)
@@ -206,70 +203,3 @@ async def get_slideshow():
     except Exception as e:
         logging.error(f"Error loading slideshow data: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
-
-
-
-
-# Execute endpoint
-# @router.post("/execute", tags=["Processing"])
-# @limiter.limit("25/hour")
-# async def execute(
-#     payload: VideoExecutionRequest, 
-#     request: Request,
-#     analytics_db = Depends(get_analytics_db)
-# ):
-#     """
-#     Process a video and extract controversial claims.
-#     """
-    
-#     limitter_logger(request, "execute")
-#     start_time = time.time()
-#     video_data_from_processing = {} # Initialize to ensure it's always defined for logging
-
-#     try:
-#         # Await the async process_video_claims function
-#         claims, video_data_from_processing, input_tokens, output_tokens, language = await process_video_claims(payload.videoID, payload.origin, payload.selectedLanguage)
-        
-#         # Calculate processing time
-#         processing_time_seconds = round(time.time() - start_time, 2)
-#         processing_time_ms = int(processing_time_seconds * 1000)  # Keep ms for analytics DB
-        
-        
-#         # Log successful request
-#         analytics_db.log_video_processing(
-#             video_id=payload.videoID,
-#             origin=payload.origin,
-#             video_title=video_data_from_processing.get("title", "Unknown Title"), 
-#             status="success",
-#             claim_count=len(claims),
-#             input_tokens=input_tokens,
-#             output_tokens=output_tokens,
-#             processing_time_ms=processing_time_ms
-#         )
-        
-#         # Log endpoint processing time
-#         logging.info(f"Execute endpoint for video {payload.videoID} completed in {processing_time_seconds}s")
-        
-#         return {
-#             "claims": claims, 
-#             "video_data": video_data_from_processing, 
-#             "videoID": payload.videoID, 
-#             "claim_count": len(claims)
-#         }
-#     except Exception as e:
-#         # Calculate processing time even for errors
-#         processing_time_seconds = round(time.time() - start_time, 2)
-#         processing_time_ms = int(processing_time_seconds * 1000)  # Keep ms for analytics DB
-        
-#         # Log failed request
-#         analytics_db.log_video_processing(
-#             video_id=payload.videoID,
-#             origin=payload.origin,
-#             video_title=video_data_from_processing.get("title", "Unknown Title (Error)"), 
-#             status="error",
-#             processing_time_ms=processing_time_ms,
-#             error_message=str(e)
-#         )
-        
-#         logging.error(f"Execute endpoint for video {payload.videoID} failed after {processing_time_seconds}s: {e}")
-#         raise HTTPException(status_code=500, detail="Error processing video")

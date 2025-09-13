@@ -11,7 +11,7 @@ import time
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-async def process_video_claims_stream(video_id: str, origin: str, language: str) -> AsyncGenerator[Dict[str, Any], None]:
+async def process_video_claims_stream(video_id: str, origin: str) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Process a YouTube video, streaming progress and extracting claims.
     Yields status updates throughout the process.
@@ -25,7 +25,7 @@ async def process_video_claims_stream(video_id: str, origin: str, language: str)
         
         
         transcript = get_yt_transcript(video_id)
-        video_data = await get_yt_video_info(video_id, language)
+        video_data = await get_yt_video_info(video_id)
         
         yield {
             "status": "progress", 
@@ -72,7 +72,7 @@ async def process_video_claims_stream(video_id: str, origin: str, language: str)
 
         formatted_chunk = format_transcript_for_analysis(chunk)
         # Directly await the async extract_claims function
-        claims, input_tokens, output_tokens = await extract_claims(formatted_chunk, video_data, language)
+        claims, input_tokens, output_tokens = await extract_claims(formatted_chunk, video_data)
 
         #TODO: Fix timestamp formatting
         # Format timestamps for consistency
@@ -81,9 +81,7 @@ async def process_video_claims_stream(video_id: str, origin: str, language: str)
                 claim['timestamp'] = timestamp_format(claim['timestamp'])
             else:
                 logging.warning(f"Claim missing timestamp: {claim.get('claim', 'Unknown claim')[:50]}...")
-                #logging.info(f"claim: {claim}")
                 claim['timestamp'] = "00:00"  # Default timestamp
-            #logging.info(f"claim: {claim}")
 
         processing_time_seconds = round(time.time() - start_time, 2)
         logging.info(f"Finished processing for chunk {index + 1} in {processing_time_seconds}s. Found {len(claims)} claims.")
@@ -131,25 +129,6 @@ async def process_video_claims_stream(video_id: str, origin: str, language: str)
             "input_tokens": total_input_tokens,
             "output_tokens": total_output_tokens,
         },
-        "language": language
     }
 
 
-async def process_video_claims(video_id: str, origin: str, language: str) -> tuple[List[Dict[str, Any]], Dict[str, Any], int, int, str]:
-    """
-    Processes a video to extract claims, waits for the full result.
-    This function now wraps the streaming version to maintain the original blocking behavior for the existing endpoint.
-    """
-    final_result = None
-    async for update in process_video_claims_stream(video_id, origin, language):
-        if update["status"] == "complete":
-            final_result = update
-            break
-    
-    if not final_result:
-        raise HTTPException(status_code=500, detail="Failed to process video claims.")
-
-    data = final_result["data"]
-    tokens = final_result["token_summary"]
-    
-    return data["claims"], data["video_data"], tokens["input_tokens"], tokens["output_tokens"], final_result["language"]

@@ -31,9 +31,3 @@ class ClaimResponse(BaseModel):
     search_query: str
     
 
-# Define response model for execute endpoint
-# class ExecuteResponse(BaseModel):
-#     claims: List[Claim] # Use the Claim schema here
-#     video_data: Optional[VideoData] # Use the VideoData schema, make it optional if it can be None
-#     videoID: str
-#     claim_count: int

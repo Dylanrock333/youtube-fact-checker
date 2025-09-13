@@ -1,4 +1,3 @@
-import anthropic
 import json
 from typing import List, Dict, Any
 import httpx
@@ -8,7 +7,6 @@ from google import genai
 import nltk
 from app.schemas import ClaimResponse
 from datetime import datetime
-from app.api.video_handlers.translate import translate_full_prompt, get_language_instruction
 # Add Perplexity API URL
 PERPLEXITY_API_URL = "https://api.perplexity.ai/chat/completions"
 
@@ -26,7 +24,7 @@ GEMINI_MODEL = "gemini-2.5-flash-lite" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.
 #GEMINI_MODEL = "gemini-2.5-pro" # INPUT: $1.25 per 1M tokens, OUTPUT: $10.00 per 1M tokens (Best results, super slow, expensive) 1:40 min for 3hr 113 claims
 #GEMINI_MODEL = "gemini-2.0-flash" # INPUT: $0.10 per 1M tokens, OUTPUT: $0.70 per 1M tokens (okay results, cheaper, faster, fewer claims) 26 sec for 3hr 78 claims
 
-async def extract_claims(transcript_text: str, video_data: Dict[str, Any], language: str) -> tuple[List[Dict[str, Any]], int, int]:
+async def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> tuple[List[Dict[str, Any]], int, int]:
     """
     Extract controversial or potentially incorrect factual claims from transcript text.
     
@@ -109,12 +107,7 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
     {transcript_text}
     """
     
-    if language != 'en':
-        final_prompt = await translate_full_prompt(prompt, language)
-        language_instruction = get_language_instruction(language)
-        final_prompt = f"{language_instruction}\n\n{final_prompt}"
-    else:
-        final_prompt = prompt
+    final_prompt = prompt
         
     try:    
         input_tokens = len(nltk.word_tokenize(prompt))
@@ -150,7 +143,7 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any], langu
 -LongShot
 '''
 async def execute_web_search(perplexity_api_key: str, claim_text: str = None, context: str = None, 
-                      video_data: dict = None, query: str = None, language: str = None):
+                      video_data: dict = None, query: str = None):
     """
     Execute a web search using the Perplexity API with enhanced context.
     
@@ -271,15 +264,8 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
     """
 
     
-    if language != 'en':
-        logging.info(f"Translating user prompt to {language}")
-        final_user_prompt = await translate_full_prompt(user_prompt, language)
-        final_system_prompt = await translate_full_prompt(system_prompt, language)
-        language_instruction = get_language_instruction(language)
-        final_system_prompt = f"{language_instruction}\n\n{final_system_prompt}"
-    else:
-        final_user_prompt = user_prompt
-        final_system_prompt = system_prompt
+    final_user_prompt = user_prompt
+    final_system_prompt = system_prompt
         
     payload = {
         "model": "sonar",
