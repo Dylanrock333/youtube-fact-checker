@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request, Depends, Header
 from fastapi.responses import StreamingResponse, JSONResponse
 import json
-from .claim_analysis.claim_extraction import process_video_claims_stream
+from .claim_analysis.claim_extraction import process_video_claims_stream, process_video_claims_sync
+from .deep_claim_accuracy_analysis.deep_search_all_claims import deep_search_all_claims
 from .agent import execute_web_search, call_gemini_agent
 from app.config import get_settings
 from app.schemas import VideoExecutionRequest, DeepSearchRequest, PostGenerationRequest
@@ -82,6 +83,72 @@ async def execute_stream(
             yield f"data: {json.dumps(error_payload)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+# Synchronous execution endpoint
+@router.post("/execute/sync", tags=["Processing"])
+@limiter.limit("25/hour")
+async def execute_sync(
+    payload: VideoExecutionRequest,
+    request: Request,
+    analytics_db = Depends(get_analytics_db)
+):
+    """
+    Process a video and return results synchronously (non-streaming).
+    """
+    limitter_logger(request, "execute_sync")
+    start_time = time.time()
+
+    try:
+        result = await process_video_claims_sync(payload.videoID, payload.origin)
+        
+        # Deep search all claims
+        # Create accuracy scored for each claim
+        result["data"] = await deep_search_all_claims(result["data"])
+
+        # Calculate accuracy scores for all claims
+        from .deep_claim_accuracy_analysis.deep_search_all_claims import get_accuracy_score
+        await get_accuracy_score(result["data"])
+
+
+        # Log analytics
+        data = result["data"]
+        token_summary = result["token_summary"]
+        video_data = data["video_data"]
+
+        processing_time_seconds = round(time.time() - start_time, 2)
+        processing_time_ms = int(processing_time_seconds * 1000)
+
+        analytics_db.log_video_processing(
+            video_id=payload.videoID,
+            origin=payload.origin,
+            video_title=video_data.get("title", "Unknown Title"),
+            status="success",
+            claim_count=data["claim_count"],
+            input_tokens=token_summary["input_tokens"],
+            output_tokens=token_summary["output_tokens"],
+            processing_time_ms=processing_time_ms
+        )
+
+        logging.info(f"Execute sync for video {payload.videoID} completed in {processing_time_seconds}s")
+        return result
+
+    except Exception as e:
+        logging.error(f"Error during sync video processing for {payload.videoID}: {e}", exc_info=True)
+        processing_time_seconds = round(time.time() - start_time, 2)
+        processing_time_ms = int(processing_time_seconds * 1000)
+
+        # Log the failure
+        analytics_db.log_video_processing(
+            video_id=payload.videoID,
+            origin=payload.origin,
+            video_title="Unknown Title (Error)",
+            status="error",
+            processing_time_ms=processing_time_ms,
+            error_message=str(e)
+        )
+
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Deepsearch endpoint   
@@ -174,9 +241,9 @@ async def gemini_generate(payload: PostGenerationRequest, request: Request):
         # The prompt is now fully constructed on the frontend
         final_prompt = payload.prompt
         
-        
         # Call the Gemini agent with the received prompt
-        response = await call_gemini_agent(final_prompt)
+        gemini_model = "gemini-2.5-pro"
+        response = await call_gemini_agent(final_prompt, gemini_model)
         
         processing_time_seconds = round(time.time() - start_time, 2)
         logging.info(f"Gemini generate endpoint completed in {processing_time_seconds}s")

@@ -11,6 +11,85 @@ import time
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+async def process_video_claims_sync(video_id: str, origin: str) -> Dict[str, Any]:
+    """
+    Process a YouTube video and extract claims without streaming.
+    Returns the final result directly.
+    """
+    if origin == "youtube":
+        transcript = get_yt_transcript(video_id)
+        video_data = await get_yt_video_info(video_id)
+    else:
+        raise ValueError(f"Unsupported origin: {origin}")
+
+    if isinstance(transcript, dict) and transcript.get("code") == 403:
+        logging.error(f"Video is private: {video_id}")
+        raise HTTPException(status_code=403, detail="The video is private and cannot be processed.")
+
+    if not video_data or not transcript:
+        logging.warning(f"No video data or transcript found for video_id: {video_id}")
+        raise HTTPException(status_code=404, detail=f"Failed to retrieve video data or transcript for video ID: {video_id}")
+
+    transcript_chunks = chunk_transcript(transcript)
+    num_chunks = len(transcript_chunks)
+    logging.info(f"Split transcript into {num_chunks} chunks for video_id: {video_id}")
+
+    all_claims_from_chunks = []
+    total_input_tokens = 0
+    total_output_tokens = 0
+
+    async def _process_chunk(index: int, chunk: List[Dict[str, Any]]):
+        """Processes a single chunk asynchronously."""
+        logging.info(f"Starting processing for chunk {index + 1}...")
+        start_time = time.time()
+
+        formatted_chunk = format_transcript_for_analysis(chunk)
+        claims, input_tokens, output_tokens = await extract_claims(formatted_chunk, video_data)
+
+        for claim in claims:
+            if 'timestamp' in claim and claim['timestamp']:
+                claim['timestamp'] = timestamp_format(claim['timestamp'])
+            else:
+                logging.warning(f"Claim missing timestamp: {claim.get('claim', 'Unknown claim')[:50]}...")
+                claim['timestamp'] = "00:00"
+
+        processing_time_seconds = round(time.time() - start_time, 2)
+        logging.info(f"Finished processing for chunk {index + 1} in {processing_time_seconds}s. Found {len(claims)} claims.")
+        return claims, input_tokens, output_tokens, (index + 1)
+
+    tasks = [_process_chunk(i, chunk) for i, chunk in enumerate(transcript_chunks)]
+
+    for future in asyncio.as_completed(tasks):
+        chunk_claims, input_tokens, output_tokens, chunk_index = await future
+        all_claims_from_chunks.append((chunk_index, chunk_claims))
+        total_input_tokens += input_tokens
+        total_output_tokens += output_tokens
+
+    all_claims_from_chunks.sort(key=lambda x: x[0])
+    final_claims = [claim for _, sublist in all_claims_from_chunks for claim in sublist]
+
+    for i, claim in enumerate(final_claims):
+        claim['id'] = i
+
+    logging.info(f"Extracted {len(final_claims)} claims in total for video_id: {video_id}.")
+    logging.info(f"Total input tokens used for video_id {video_id}: {total_input_tokens}")
+    logging.info(f"Total output tokens generated for video_id {video_id}: {total_output_tokens}")
+
+    return {
+        "status": "complete",
+        "data": {
+            "claims": final_claims,
+            "video_data": video_data,
+            "videoID": video_id,
+            "claim_count": len(final_claims)
+        },
+        "token_summary": {
+            "input_tokens": total_input_tokens,
+            "output_tokens": total_output_tokens,
+        },
+    }
+
+
 async def process_video_claims_stream(video_id: str, origin: str) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Process a YouTube video, streaming progress and extracting claims.

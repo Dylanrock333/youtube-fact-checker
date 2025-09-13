@@ -317,20 +317,28 @@ async def execute_web_search(perplexity_api_key: str, claim_text: str = None, co
 - Groq-distil-whisper
 '''
 
-async def call_gemini_agent(prompt: str):
+async def call_gemini_agent(prompt: str, model, schema=None):
     """
     Calls the Gemini API with a generic prompt and returns the response.
     """
-    
-    def _sync_generate_content(prompt):
+
+    def _sync_generate_content(prompt, schema):
         """Synchronous wrapper for Gemini API call that reuses the global client."""
+        config = {}
+        if schema:
+            config = {
+                'response_mime_type': 'application/json',
+                'response_schema': schema,
+            }
+
         return gemini_client.models.generate_content(
-            model="gemini-2.5-pro",
-            contents=prompt
+            model=model,
+            contents=prompt,
+            config=config if config else None
         )
 
     try:
-        response = await asyncio.to_thread(_sync_generate_content, prompt)
+        response = await asyncio.to_thread(_sync_generate_content, prompt, schema)
         return response.text
     except Exception as e:
         logging.error(f"Error calling Gemini API: {e}")
