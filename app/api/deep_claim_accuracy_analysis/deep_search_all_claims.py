@@ -83,7 +83,14 @@ async def get_accuracy_score(data: Dict[str, Any]):
         if 'error' not in deep_search:
             # Create generic prompt for accuracy scoring
             prompt = f"""
-            Create accuracy score for the following claim and analysis based on the search result from verifiable sources.
+            You are given a claim form a video. This claim is combined with the context and a short title.
+            You are given a search result which is a summary of an investigation into the claim using verifiable sources.
+
+            Your task is to evaluate how accurate the claim is based on the provided evidence.  
+                - Compare the claim directly to the evidence.  
+                - If the evidence fully supports the claim, score it as highly accurate.  
+                - If the evidence partially supports it, give a moderate score.  
+                - If the evidence contradicts or provides no support, give a low score. 
 
             TITLE: {claim.get('title', '')}
             CLAIM: {claim.get('claim', '')}
@@ -91,7 +98,7 @@ async def get_accuracy_score(data: Dict[str, Any]):
             
             SEARCH RESULT: {deep_search.get('message', '')}
 
-            Provide an accuracy score 0-100. 0 being the lowest accuracy and 100 being the highest accuracy.
+            Provide an accuracy score, an integer from 0 to 100, no rounding to multiples of 5 or 10.
             """
 
             try:
