@@ -1,5 +1,8 @@
 import logging
 import asyncio
+import numpy as np
+import hdbscan
+from collections import defaultdict
 from ..embedding_service import EmbeddingService
 
 #Embedding based clustering
@@ -8,13 +11,17 @@ async def claim_clustering_1(data):
     First claim clustering function.
     """
     logging.info("Executing claim_clustering_1")
+    
+    #claim_length = len(data.get("claims", []))
+    claim_list = data.get("claims", [])
 
     embedding_service = EmbeddingService()
 
     flattened_claims = []
     claim_texts = []
 
-    for claim in data.get("claims", []):
+    #Flatten the claims to a list of strings
+    for claim in claim_list:
         claim_embedding_text = f'''
             Title: {claim["title"]}
             Claim: {claim["claim"]}
@@ -36,19 +43,62 @@ async def claim_clustering_1(data):
         claim["claim_embedding"] = embeddings[i]
         del claim["claim_embedding_text"]  # Remove the text version
 
-    for i, claim in enumerate(flattened_claims):
-        logging.info(f"Claim {claim['id']}: embedding value (first 50 chars) = {str(claim['claim_embedding'])[:50]}")
-        logging.info("--------------------------------")
-    
-    # Placeholder clustering logic
-    # result = {
-    #     "method": "clustering_1",
-    #     "processed_claims": len(data.get("claims", [])) if isinstance(data, dict) else 0,
-    #     "status": "completed"
-    # }
+    # for i, claim in enumerate(flattened_claims):
+    #     logging.info(f"Claim {claim['id']}: embedding value (first 50 chars) = {str(claim['claim_embedding'])[:50]}")
+    #     logging.info("--------------------------------")
 
-    #logging.info(f"claim_clustering_1 results: {result}")
-    return flattened_claims
+    # HDBSCAN Clustering
+    if len(flattened_claims) < 2:
+        # If we have less than 2 claims, put them all in cluster 0
+        cluster_groups = {0: [claim["id"] for claim in flattened_claims]}
+        logging.info("Less than 2 claims, no clustering performed")
+    else:
+        # Convert embeddings to numpy array
+        embedding_matrix = np.array([claim["claim_embedding"] for claim in flattened_claims])
+
+        # Normalize embeddings for cosine similarity (use L2 norm then euclidean = cosine)
+        from sklearn.preprocessing import normalize
+        embedding_matrix = normalize(embedding_matrix, norm='l2')
+
+        # Perform HDBSCAN clustering
+        clusterer = hdbscan.HDBSCAN(
+            min_cluster_size=3,
+            min_samples=1,
+            # random_state=42,
+            metric='euclidean'
+        )
+        cluster_labels = clusterer.fit_predict(embedding_matrix)
+
+        # Group claims by cluster ID
+        cluster_groups = defaultdict(list)
+        for i, label in enumerate(cluster_labels):
+            claim_id = flattened_claims[i]["id"]
+            cluster_groups[int(label)].append(claim_id)
+
+        # Convert defaultdict to regular dict and ensure it's in the requested format
+        cluster_groups = dict(cluster_groups)
+
+        logging.info(f"HDBSCAN clustering completed. Found {len(cluster_groups)} clusters")
+        for cluster_id, claim_ids in cluster_groups.items():
+            if cluster_id == -1:
+                logging.info(f"Noise cluster: {claim_ids}")
+            else:
+                logging.info(f"Cluster {cluster_id}: {claim_ids}")
+
+    # Create clustered claims structure with full claim objects
+    clustered_claims = {}
+
+    # Create a mapping from claim ID to full claim object for quick lookup
+    claim_id_to_claim = {claim["id"]: claim for claim in claim_list}
+
+    # For each cluster, get the full claim objects
+    for cluster_id, claim_ids in cluster_groups.items():
+        clustered_claims[cluster_id] = []
+        for claim_id in claim_ids:
+            if claim_id in claim_id_to_claim:
+                clustered_claims[cluster_id].append(claim_id_to_claim[claim_id])
+
+    return clustered_claims
 
 #LLM based clustering
 def claim_clustering_2(data):

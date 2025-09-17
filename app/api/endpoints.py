@@ -4,6 +4,7 @@ import json
 from .claim_analysis.claim_extraction import process_video_claims_stream, process_video_claims_sync
 from .deep_claim_accuracy_analysis.deep_search_all_claims import deep_search_all_claims
 from .deep_claim_accuracy_analysis.claim_grouping import claim_clustering_1, claim_clustering_2
+from .deep_claim_accuracy_analysis.llm_category import category_label_generation_1, category_noise_assignment_1
 from .agent import execute_web_search, call_gemini_agent
 from app.config import get_settings
 from app.schemas import VideoExecutionRequest, DeepSearchRequest, PostGenerationRequest
@@ -105,6 +106,13 @@ async def execute_sync(
         
         #Clustering claims
         clustering_result_1 = await claim_clustering_1(result["data"])
+
+        #Category label generation
+        labeled_result = await category_label_generation_1(clustering_result_1)
+
+        #Category noise assignment
+        #final_result = category_noise_assignment_1(labeled_result)
+        
         #clustering_result_2 = claim_clustering_2(result["data"])
         #logging.info(f"Clustering results - Method 1: {clustering_result_1}, Method 2: {clustering_result_2}")
 
@@ -138,7 +146,7 @@ async def execute_sync(
         )
 
         logging.info(f"Execute sync for video {payload.videoID} completed in {processing_time_seconds}s")
-        return result
+        return labeled_result
 
     except Exception as e:
         logging.error(f"Error during sync video processing for {payload.videoID}: {e}", exc_info=True)

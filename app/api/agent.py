@@ -126,7 +126,7 @@ async def extract_claims(transcript_text: str, video_data: Dict[str, Any]) -> tu
         print(f"Error processing response: {e}")
         try:
             problematic_text = response.candidates[0].content.parts[0].text
-            print(f"Problematic text snippet: {problematic_text[:100]}...")
+            print(f"Problematic text snippet: {problematic_text[:100]}...") #TODO: Handle this better if it happens with a retry mechanism
         except Exception as log_e:
             print(f"Could not extract problematic text: {log_e}")
             if 'response' in locals():
