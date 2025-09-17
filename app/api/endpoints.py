@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import json
 from .claim_analysis.claim_extraction import process_video_claims_stream, process_video_claims_sync
 from .deep_claim_accuracy_analysis.deep_search_all_claims import deep_search_all_claims
+from .deep_claim_accuracy_analysis.claim_grouping import claim_clustering_1, claim_clustering_2
 from .agent import execute_web_search, call_gemini_agent
 from app.config import get_settings
 from app.schemas import VideoExecutionRequest, DeepSearchRequest, PostGenerationRequest
@@ -102,13 +103,19 @@ async def execute_sync(
     try:
         result = await process_video_claims_sync(payload.videoID, payload.origin)
         
-        # Deep search all claims
-        # Create accuracy scored for each claim
-        result["data"] = await deep_search_all_claims(result["data"])
+        #Clustering claims
+        clustering_result_1 = await claim_clustering_1(result["data"])
+        #clustering_result_2 = claim_clustering_2(result["data"])
+        #logging.info(f"Clustering results - Method 1: {clustering_result_1}, Method 2: {clustering_result_2}")
 
-        # Calculate accuracy scores for all claims
-        from .deep_claim_accuracy_analysis.deep_search_all_claims import get_accuracy_score
-        await get_accuracy_score(result["data"])
+
+        # # Deep search all claims
+        # # Create accuracy scored for each claim
+        # result["data"] = await deep_search_all_claims(result["data"])
+
+        # # Calculate accuracy scores for all claims
+        # from .deep_claim_accuracy_analysis.deep_search_all_claims import get_accuracy_score
+        # await get_accuracy_score(result["data"])
 
 
         # Log analytics

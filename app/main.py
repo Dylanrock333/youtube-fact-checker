@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
 from app.config import get_settings
 from app.analytics import AnalyticsDB
+from app.api.embedding_service import embedding_service
 
 # Custom formatter to truncate long URLs in all log messages
 class URLTruncatingFormatter(logging.Formatter):
@@ -82,6 +83,7 @@ analytics_db = AnalyticsDB()
 
 # Add to your FastAPI app
 app.state.analytics_db = analytics_db
+app.state.embedding_service = embedding_service
 
 # Custom rate limit handler
 @app.exception_handler(RateLimitExceeded)

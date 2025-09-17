@@ -2,10 +2,10 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 class Settings(BaseSettings):
-    anthropic_api_key: str
     perplexity_api_key: str
     google_yt_api_key: str
     google_gemini_api_key: str
+    open_ai_key: str = None
     webshare_username: str
     webshare_password: str
     webshare_proxy_host: str = "p.webshare.io"  # Default value, adjust as needed
