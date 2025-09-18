@@ -12,7 +12,7 @@ async def claim_clustering_1(data):
     """
     logging.info("Executing claim_clustering_1")
     
-    #claim_length = len(data.get("claims", []))
+    claim_length = len(data.get("claims", []))
     claim_list = data.get("claims", [])
 
     embedding_service = EmbeddingService()
@@ -60,9 +60,18 @@ async def claim_clustering_1(data):
         from sklearn.preprocessing import normalize
         embedding_matrix = normalize(embedding_matrix, norm='l2')
 
+        if claim_length <= 10:
+            min_cluster_size = 2
+        elif claim_length <= 50:
+            min_cluster_size = max(3, int(claim_length * 0.05))   # 5% of claims
+        elif claim_length <= 200:
+            min_cluster_size = max(5, int(claim_length * 0.03))   # 3% of claims
+        else:
+            min_cluster_size = max(10, int(claim_length * 0.02))  # 2% of claims
+    
         # Perform HDBSCAN clustering
         clusterer = hdbscan.HDBSCAN(
-            min_cluster_size=3,
+            min_cluster_size=min_cluster_size,
             min_samples=1,
             # random_state=42,
             metric='euclidean'
@@ -98,7 +107,15 @@ async def claim_clustering_1(data):
             if claim_id in claim_id_to_claim:
                 clustered_claims[cluster_id].append(claim_id_to_claim[claim_id])
 
-    return clustered_claims
+    # Preserve the original data structure and add clustered claims
+    result = {
+        "video_data": data.get("video_data"),
+        "videoID": data.get("videoID"),
+        "claim_count": data.get("claim_count"),
+        **clustered_claims  # Merge clustered claims as top-level keys
+    }
+
+    return result
 
 #LLM based clustering
 def claim_clustering_2(data):
