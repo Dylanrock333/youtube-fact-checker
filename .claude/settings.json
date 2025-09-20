@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit", "Read", "Write",
+      "Bash(git add:*)",
+      "Bash(npm:*)",
+      "Bash(python:*)", 
+      "Gh"
+    ],
+    "deny": [
+      "Edit(.claude/settings.json)",
+      "Edit(.claude/settings.local.json)",
+      "Write(.claude/settings.json)",
+      "Write(.claude/settings.local.json)",
+      "MultiEdit(.claude/settings.json)", 
+      "MultiEdit(.claude/settings.local.json)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)", 
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(git remote rm:*)",
+      "Bash(git branch -D:*)",
+      "Bash(rm:*)",           
+      "Bash(rmdir:*)",        
+      "Bash(del:*)",          
+      "Bash(rd:*)",           
+      "Bash(format:*)",       
+      "Bash(fdisk:*)",
+      "Bash(git reset:*)",
+      "Bash(git reset --hard:*)",     
+      "Bash(git clean -fd:*)",        
+      "Bash(git push --force:*)",     
+      "Bash(sudo:*)"
+    ]
+  }
+}

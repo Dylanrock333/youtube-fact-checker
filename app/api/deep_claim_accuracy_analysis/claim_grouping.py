@@ -4,6 +4,7 @@ import numpy as np
 import hdbscan
 from collections import defaultdict
 from ..embedding_service import EmbeddingService
+from .llm_category import category_label_generation_1, category_noise_assignment_1, sort_claims_by_timestamp
 
 #Embedding based clustering
 async def claim_clustering_1(data):
@@ -116,6 +117,26 @@ async def claim_clustering_1(data):
     }
 
     return result
+
+async def claim_grouping_1(data):
+        #Clustering claims
+    clustering_result_1 = await claim_clustering_1(data)
+
+    #Category label generation
+    labeled_result = await category_label_generation_1(clustering_result_1)
+
+    #Category noise assignment
+    if "-1" in labeled_result or -1 in labeled_result:
+        logging.info("Found -1 category, running category noise assignment")
+        assigned_result = await category_noise_assignment_1(labeled_result)
+    else:
+        logging.info("No -1 category found, skipping category noise assignment")
+        assigned_result = labeled_result
+
+    # Sort claims by timestamp within each category
+    video_clustered_result = sort_claims_by_timestamp(assigned_result)
+    
+    return video_clustered_result
 
 #LLM based clustering
 def claim_clustering_2(data):

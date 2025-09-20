@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Request, Depends, Header
 from fastapi.responses import StreamingResponse, JSONResponse
 import json
 from .claim_analysis.claim_extraction import process_video_claims_stream, process_video_claims_sync
-from .deep_claim_accuracy_analysis.deep_search_all_claims import deep_search_all_claims
-from .deep_claim_accuracy_analysis.claim_grouping import claim_clustering_1, claim_clustering_2
+from .deep_claim_accuracy_analysis.deep_search_all_claims import deep_search_all_claims, get_accuracy_score
+from .deep_claim_accuracy_analysis.claim_grouping import claim_clustering_1, claim_clustering_2, claim_grouping_1
 from .deep_claim_accuracy_analysis.llm_category import category_label_generation_1, category_noise_assignment_1, sort_claims_by_timestamp
 from .agent import execute_web_search, call_gemini_agent
 from app.config import get_settings
@@ -104,37 +104,19 @@ async def execute_sync(
     try:
         result = await process_video_claims_sync(payload.videoID, payload.origin)
 
-        #Clustering claims
-        clustering_result_1 = await claim_clustering_1(result["data"])
+        video_clustered_result = await claim_grouping_1(result["data"])
 
-        #Category label generation
-        labeled_result = await category_label_generation_1(clustering_result_1)
+        final_result = await deep_search_all_claims(video_clustered_result)
 
-        #Category noise assignment
-        if "-1" in labeled_result or -1 in labeled_result:
-            logging.info("Found -1 category, running category noise assignment")
-            result["data"] = await category_noise_assignment_1(labeled_result)
-        else:
-            logging.info("No -1 category found, skipping category noise assignment")
-            result["data"] = labeled_result
-
-        # Sort claims by timestamp within each category
-        result["data"] = sort_claims_by_timestamp(result["data"])
-            
-            
-        
         #clustering_result_2 = claim_clustering_2(result["data"])
         #logging.info(f"Clustering results - Method 1: {clustering_result_1}, Method 2: {clustering_result_2}")
 
 
-        # Deep search all claims
-        # Create accuracy scored for each claim
-        # result["data"] = await deep_search_all_claims(result["data"])
 
-        # # Calculate accuracy scores for all claims
-        # from .deep_claim_accuracy_analysis.deep_search_all_claims import get_accuracy_score
-        # await get_accuracy_score(result["data"])
+        # Update result data with the enhanced clustered data
 
+
+        
 
         # Log analytics
         data = result["data"]
@@ -165,8 +147,9 @@ async def execute_sync(
             processing_time_ms=processing_time_ms
         )
 
+
         logging.info(f"Execute sync for video {payload.videoID} completed in {processing_time_seconds}s")
-        return result
+        return final_result
 
     except Exception as e:
         logging.error(f"Error during sync video processing for {payload.videoID}: {e}", exc_info=True)
