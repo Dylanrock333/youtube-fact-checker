@@ -28,7 +28,7 @@ async def execute_stream(
     payload: VideoExecutionRequest,
     request: Request,
     analytics_db = Depends(get_analytics_db),
-    x_request_source: str = Header(None)
+    request_header: str = Header(None)
 ):
     """
     Process a video and stream progress and results via SSE.
@@ -37,7 +37,7 @@ async def execute_stream(
     start_time = time.time()
 
     # Determine request source from header, default to "user"
-    request_source = x_request_source.lower() if x_request_source in ["user", "bot"] else "user"
+    request_source = request_header.lower() if request_header in ["user", "bot"] else "user"
 
     async def event_generator():
         video_data_from_processing = {}
