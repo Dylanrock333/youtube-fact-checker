@@ -25,16 +25,20 @@ def get_analytics_db(request: Request):
 @router.post("/execute/stream", tags=["Processing"])
 @limiter.limit("25/hour")
 async def execute_stream(
-    payload: VideoExecutionRequest, 
+    payload: VideoExecutionRequest,
     request: Request,
-    analytics_db = Depends(get_analytics_db)
+    analytics_db = Depends(get_analytics_db),
+    x_request_source: str = Header(None)
 ):
     """
     Process a video and stream progress and results via SSE.
     """
     limitter_logger(request, "execute_stream")
     start_time = time.time()
-    
+
+    # Determine request source from header, default to "user"
+    request_source = x_request_source.lower() if x_request_source in ["user", "bot"] else "user"
+
     async def event_generator():
         video_data_from_processing = {}
         try:
@@ -58,7 +62,8 @@ async def execute_stream(
                         claim_count=data["claim_count"],
                         input_tokens=token_summary["input_tokens"],
                         output_tokens=token_summary["output_tokens"],
-                        processing_time_ms=processing_time_ms
+                        processing_time_ms=processing_time_ms,
+                        request_source=request_source
                     )
                     logging.info(f"Execute stream for video {payload.videoID} completed in {processing_time_seconds}s")
 
@@ -74,7 +79,8 @@ async def execute_stream(
                 video_title=video_data_from_processing.get("title", "Unknown Title (Error)"),
                 status="error",
                 processing_time_ms=processing_time_ms,
-                error_message=str(e)
+                error_message=str(e),
+                request_source=request_source
             )
             
             # Send an error event to the client
@@ -136,10 +142,11 @@ async def deepsearch(payload: DeepSearchRequest, request: Request):
 async def get_recent_analytics(
     request: Request,
     limit: int = 1000,
+    request_source: str = None,
     analytics_db = Depends(get_analytics_db)
 ):
-    """Get recent video processing analytics."""
-    return analytics_db.get_recent_videos(limit)
+    """Get recent video processing analytics, optionally filtered by request source (user/bot)."""
+    return analytics_db.get_recent_videos(limit, request_source)
 
 @router.post("/analytics/clear", tags=["Analytics"])
 async def clear_analytics(

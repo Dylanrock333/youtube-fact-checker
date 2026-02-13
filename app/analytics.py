@@ -45,13 +45,15 @@ class AnalyticsDB:
                 input_tokens INTEGER,
                 output_tokens INTEGER,
                 processing_time_ms INTEGER,
-                error_message TEXT
+                error_message TEXT,
+                request_source TEXT DEFAULT 'user'
             )
             ''')
             
             # Create indexes for common queries
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON video_analytics(timestamp)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_video_id ON video_analytics(video_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_request_source ON video_analytics(request_source)')
             
             conn.commit()
             conn.close()
@@ -59,7 +61,7 @@ class AnalyticsDB:
         except Exception as e:
             logging.error(f"Error initializing analytics database: {e}")
             
-    def log_video_processing(self, 
+    def log_video_processing(self,
                            video_id: str,
                            video_title: str,
                            origin: str,
@@ -68,7 +70,8 @@ class AnalyticsDB:
                            input_tokens: Optional[int] = None,
                            output_tokens: Optional[int] = None,
                            processing_time_ms: Optional[int] = None,
-                           error_message: Optional[str] = None):
+                           error_message: Optional[str] = None,
+                           request_source: str = "user"):
         """Log video processing analytics to the database."""
         try:
             conn = sqlite3.connect(self.db_path)
@@ -76,21 +79,22 @@ class AnalyticsDB:
             
             cursor.execute('''
             INSERT INTO video_analytics (
-                timestamp, video_id, video_title, origin, status, 
-                claim_count, input_tokens, output_tokens, 
-                processing_time_ms, error_message
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                timestamp, video_id, video_title, origin, status,
+                claim_count, input_tokens, output_tokens,
+                processing_time_ms, error_message, request_source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 datetime.now(timezone.utc).isoformat(),
                 video_id,
                 video_title,
                 origin,
                 status,
-                claim_count,    
+                claim_count,
                 input_tokens,
                 output_tokens,
                 processing_time_ms,
-                error_message
+                error_message,
+                request_source
             ))
             
             conn.commit()
@@ -99,19 +103,27 @@ class AnalyticsDB:
         except Exception as e:
             logging.error(f"Error logging analytics: {e}")
             
-    def get_recent_videos(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Get the most recent video processing records."""
+    def get_recent_videos(self, limit: int = 100, request_source: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get the most recent video processing records, optionally filtered by request source."""
         try:
             conn = sqlite3.connect(self.db_path)
-            conn.row_factory = sqlite3.Row 
+            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            
-            cursor.execute('''
-            SELECT * FROM video_analytics
-            ORDER BY timestamp DESC
-            LIMIT ?
-            ''', (limit,))
-            
+
+            if request_source:
+                cursor.execute('''
+                SELECT * FROM video_analytics
+                WHERE request_source = ?
+                ORDER BY timestamp DESC
+                LIMIT ?
+                ''', (request_source, limit))
+            else:
+                cursor.execute('''
+                SELECT * FROM video_analytics
+                ORDER BY timestamp DESC
+                LIMIT ?
+                ''', (limit,))
+
             results = [dict(row) for row in cursor.fetchall()]
             conn.close()
             return results
