@@ -322,18 +322,29 @@ def timestamp_format(timestamp: str) -> str:
     """
     Formats timestamps for consistency.
 
+    - Strips decimal subseconds (e.g., "13:12.3" → "13:12")
     - Converts HH:MM:SS to MM:SS if the hour is 00.
     - Converts MM:SS to H:MM:SS if minutes are 60 or more.
     - Handles various timestamp formats from video transcripts.
     """
-    parts = str(timestamp).split(':')
+    # Convert to string and strip decimal subseconds if present
+    timestamp_str = str(timestamp)
+    if '.' in timestamp_str:
+        timestamp_str = timestamp_str.split('.')[0]
+
+    parts = timestamp_str.split(':')
 
     if len(parts) == 3:
         # Format HH:MM:SS
-        if parts[0] == '00':
-            return f"{parts[1]}:{parts[2]}"
+        if parts[0] == '00' or parts[0] == '0':
+            # Strip leading zeros from minutes
+            try:
+                minutes = int(parts[1])
+                return f"{minutes}:{parts[2]}"
+            except ValueError:
+                return f"{parts[1]}:{parts[2]}"
         else:
-            return str(timestamp)
+            return timestamp_str
 
     elif len(parts) == 2:
         # Format MM:SS
@@ -345,9 +356,9 @@ def timestamp_format(timestamp: str) -> str:
                 remaining_minutes = minutes % 60
                 return f"{hours}:{remaining_minutes:02d}:{seconds}"
             else:
-                return str(timestamp)
+                return timestamp_str
         except ValueError:
             # Handle cases where conversion to int fails
-            return str(timestamp)
+            return timestamp_str
 
-    return str(timestamp)
+    return timestamp_str
