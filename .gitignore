@@ -41,6 +41,9 @@ venv.bak/
 .pydevproject
 .settings/
 
+# Claude Code memory files
+**/CLAUDE.md
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
